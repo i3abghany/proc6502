@@ -46,11 +46,17 @@ void proc6502::clock()
 {
 	if (this->Cycles == 0)
 	{
+
 		this->OpCode = this->read(PCReg);
 		++PCReg;
+
+		this->SetFlag(proc6502::FLAGS6502::U, true);
+
 		this->Cycles = this->InstructionLookupTable[this->OpCode].Cycles;
-		auto AdditionalClockCycles1 = (this->InstructionLookupTable[this->OpCode].AddressMode)(this);
-		auto AdditionalClockCycles2 = (this->InstructionLookupTable[this->OpCode].Operation)(this);
+		
+		auto AdditionalClockCycles1 = (this->*InstructionLookupTable[this->OpCode].AddressMode)();
+		auto AdditionalClockCycles2 = (this->*InstructionLookupTable[this->OpCode].Operation)();
+		
 		this->Cycles += (AdditionalClockCycles1 & AdditionalClockCycles2);
 		
 	}
@@ -224,7 +230,7 @@ std::uint8_t proc6502::IZY()
 
 std::uint8_t proc6502::fetch()
 {
-	if (this->GetAddress(this->InstructionLookupTable[this->OpCode].AddressMode) != &this->IMP)
+	if (this->InstructionLookupTable[this->OpCode].AddressMode != &proc6502::IMP)
 	{
 		this->FetchedData = this->read(this->AbsoluteAddress);
 	}
@@ -245,7 +251,7 @@ std::uint8_t proc6502::ADC()
 	bool FetchedMSB = this->FetchedData & 0x0080;
 	bool AcMSB = this->ACReg & 0x0080;
 
-	this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ ACReg) & ~(FetchedMSB ^ ACReg));
+	this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ AcMSB) & ~(FetchedMSB ^ AcMSB));
 	
 	this->ACReg = this->TempReg & 0x00FF;
 
@@ -268,7 +274,7 @@ std::uint8_t proc6502::SBC()
 	bool FetchedMSB = this->FetchedData & 0x0080;
 	bool AcMSB = this->ACReg & 0x0080;
 
-	this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ ACReg) & ~(FetchedMSB ^ ACReg));
+	this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ AcMSB) & ~(FetchedMSB ^ AcMSB));
 
 	this->ACReg = this->TempReg & 0x00FF;
 
@@ -295,7 +301,7 @@ std::uint8_t proc6502::ASL()
 	this->SetFlag(proc6502::FLAGS6502::N, (this->TempReg & 0x80));
 	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
 
-	if (this->GetAddress(this->InstructionLookupTable[OpCode].AddressMode) == &this->IMP)
+	if (this->InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
 	{
 		this->ACReg = static_cast<std::uint8_t>(this->TempReg) & 0xFF;
 	}
@@ -453,13 +459,6 @@ std::uint8_t proc6502::CLI()
 	return 0;
 }
 
-std::uint8_t proc6502::CLC()
-{
-	this->SetFlag(proc6502::FLAGS6502::C, false);
-	return 0;
-}
-
-
 std::uint8_t proc6502::CLD()
 {
 	this->SetFlag(proc6502::FLAGS6502::D, false);
@@ -472,6 +471,7 @@ std::uint8_t proc6502::CLV()
 	return 0;
 }
 
+// Compare AC register with fetched data and set flags accordingly.
 std::uint8_t proc6502::CMP()
 {
 	this->fetch();
@@ -483,7 +483,7 @@ std::uint8_t proc6502::CMP()
 
 	return 0;
 }
-
+// Compare X register with fetched data and set flags accordingly.
 std::uint8_t proc6502::CPX()
 {
 	this->fetch();
@@ -496,7 +496,7 @@ std::uint8_t proc6502::CPX()
 	return 0;
 }
 
-
+// Compare Y register with fetched data and set flags accordingly.
 std::uint8_t proc6502::CPY()
 {
 	this->fetch();
@@ -614,6 +614,88 @@ std::uint8_t proc6502::INY()
 	this->SetFlag(proc6502::FLAGS6502::Z, this->YReg == 0x0000);
 	this->SetFlag(proc6502::FLAGS6502::N, this->YReg  & 0x0080);
 
+	return 0;
+}
+
+// Jump unconditionally to address stored.
+std::uint8_t proc6502::JMP()
+{
+	this->PCReg = this->AbsoluteAddress;
+	return 0;
+}
+
+// Jump to sub routine address.
+std::uint8_t proc6502::JSR()
+{
+	--this->PCReg;
+	
+	this->write(this->StackStart + this->SPReg, (this->PCReg >> 8) & 0x00FF);
+	--this->SPReg;
+
+	this->write(this->StackStart + this->SPReg, (this->PCReg & 0x00FF));
+	--this->SPReg;
+
+	this->PCReg = this->AbsoluteAddress;
+
+	return 0;
+}
+
+std::uint8_t proc6502::LDA()
+{
+	this->fetch();
+
+	this->ACReg = this->FetchedData;
+	
+	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
+	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+
+	return 0;
+}
+
+std::uint8_t proc6502::LDX()
+{
+	this->fetch();
+
+	this->XReg = this->FetchedData;
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->XReg == 0x00);
+	this->SetFlag(proc6502::FLAGS6502::N, this->XReg & 0x80);
+
+	return 0;
+}
+
+std::uint8_t proc6502::LDY()
+{
+	this->fetch();
+
+	this->YReg = this->FetchedData;
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->YReg == 0x00);
+	this->SetFlag(proc6502::FLAGS6502::N, this->YReg & 0x80);
+
+	return 0;
+}
+
+std::uint8_t proc6502::LSR()
+{
+	this->fetch();
+	
+	this->SetFlag(proc6502::FLAGS6502::C, this->FetchedData & 0x0001);
+	
+	this->TempReg = this->FetchedData >> 1;
+	
+	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg == 0x0080);
+	
+	if (this->InstructionLookupTable[this->OpCode].AddressMode == &proc6502::IMP)
+	{
+		this->ACReg = static_cast<std::uint8_t>(this->TempReg & 0x00FF);
+	}
+	else
+	{
+		this->write(this->AbsoluteAddress, static_cast<std::uint8_t>(this->TempReg & 0x00FF));
+	}
+	
 	return 0;
 }
 

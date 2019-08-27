@@ -32,6 +32,8 @@ public:
 	std::uint8_t  SPReg =   0x00; // Stack pointer register.
 	std::uint16_t PCReg = 0x0000; // Program Counter register.
 	std::uint8_t  STReg =   0x00; // Status register.
+	
+	static constexpr std::uint16_t StackStart = 0x0100; // Location of stack in the main memory.
 
 
 	void ConnectBus(Bus*);
@@ -59,13 +61,6 @@ private:
 	before executing the instruction. 
 
 */
-	template<typename T, typename... U>
-	std::size_t GetAddress(std::function<T(U...)> f) {
-		typedef T(fnType)(U...);
-		fnType** fnPointer = f.template target<fnType*>();
-		return (size_t)* fnPointer;
-	}
-
 	uint8_t IMP();
 	uint8_t IMM();
 	uint8_t ZP0();
@@ -116,8 +111,8 @@ private:
 	struct INSTRUCTION
 	{
 		std::string name;
-		std::function<std::uint8_t(proc6502*)> Operation = std::function<std::uint8_t(proc6502*)>();
-		std::function<std::uint8_t(proc6502*)> AddressMode = std::function<std::uint8_t(proc6502*)>();
+		std::uint8_t(proc6502::* Operation)(void) = nullptr;
+		std::uint8_t(proc6502::* AddressMode)(void) = nullptr;
 		std::uint8_t Cycles = 0;
 	};
 
