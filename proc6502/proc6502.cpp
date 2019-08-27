@@ -275,7 +275,6 @@ std::uint8_t proc6502::SBC()
 	return 1;
 }
 
-
 std::uint8_t proc6502::AND()
 {
 	this->fetch();
@@ -373,7 +372,7 @@ std::uint8_t proc6502::BNE()
 
 std::uint8_t proc6502::BPL()
 {
-	if (this->GetFlag(proc6502::FLAGS6502::Z) == 1)
+	if (this->GetFlag(proc6502::FLAGS6502::N) == 0)
 	{
 		++this->Cycles;
 		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
@@ -416,6 +415,32 @@ std::uint8_t proc6502::BVS()
 	return 0;
 }
 
+std::uint8_t proc6502::BMI()
+{
+	if (this->GetFlag(proc6502::FLAGS6502::N) == 1)
+	{
+		++this->Cycles;
+		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
+
+		if ((this->AbsoluteAddress & 0xFF00) != (this->PCReg & 0xFF00))
+			++this->Cycles;
+
+		this->PCReg = this->AbsoluteAddress;
+	}
+	return 0;
+}
+
+std::uint8_t proc6502::BIT()
+{
+	std::uint16_t AndedValue = this->ACReg & this->FetchedData;
+
+	this->SetFlag(proc6502::FLAGS6502::N, this->FetchedData & (1 << 7));
+	this->SetFlag(proc6502::FLAGS6502::V, this->FetchedData & (1 << 6));
+	this->SetFlag(proc6502::FLAGS6502::Z, (AndedValue & 0x0000) == 0);
+
+	return 0;
+}
+
 std::uint8_t proc6502::CLC()
 {
 	this->SetFlag(proc6502::FLAGS6502::C, false);
@@ -438,6 +463,157 @@ std::uint8_t proc6502::CLC()
 std::uint8_t proc6502::CLD()
 {
 	this->SetFlag(proc6502::FLAGS6502::D, false);
+	return 0;
+}
+
+std::uint8_t proc6502::CLV()
+{
+	this->SetFlag(proc6502::FLAGS6502::V, false);
+	return 0;
+}
+
+std::uint8_t proc6502::CMP()
+{
+	this->fetch();
+	this->TempReg = static_cast<std::uint16_t>(this->ACReg) - static_cast<std::uint16_t>(this->FetchedData);
+	
+	this->SetFlag(proc6502::FLAGS6502::C, this->ACReg >= this->FetchedData);
+	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+
+	return 0;
+}
+
+std::uint8_t proc6502::CPX()
+{
+	this->fetch();
+	this->TempReg = static_cast<std::uint16_t>(this->ACReg) - static_cast<std::uint16_t>(this->XReg);
+
+	this->SetFlag(proc6502::FLAGS6502::C, this->YReg >= this->FetchedData);
+	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+
+	return 0;
+}
+
+
+std::uint8_t proc6502::CPY()
+{
+	this->fetch();
+	this->TempReg = static_cast<std::uint16_t>(this->YReg) - static_cast<std::uint16_t>(this->YReg);
+
+	this->SetFlag(proc6502::FLAGS6502::C, this->YReg >= this->FetchedData);
+	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+
+	return 0;
+}
+
+
+// Decrement at memory address.
+// M[AbsoluteAddress] -= 1.
+// Sets flags Z and N.
+std::uint8_t proc6502::DEC()
+{
+	this->fetch();
+	
+	this->TempReg = static_cast<std::uint16_t>(this->FetchedData) - 1;
+
+	this->write(this->AbsoluteAddress, this->TempReg & 0x00FF);
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+
+	return 0;
+}
+
+
+// Decrement XReg.
+// XReg = XReg - 1.
+// Sets flags Z and N.
+std::uint8_t proc6502::DEX()
+{
+	--this->XReg;
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->XReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->XReg & 0x0080);
+
+	return 0;
+}
+
+
+// Decrement YReg.
+// YReg = YReg - 1.
+// Sets flags Z and N.
+std::uint8_t proc6502::DEY()
+{
+	--this->XReg;
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->YReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->YReg & 0x0080);
+
+	return 0;
+}
+
+
+// XOR AC register with the fetched data.
+// AC = AC ^ FetchedData.
+// Sets flags Z and N.
+std::uint8_t proc6502::EOR()
+{
+	this->fetch();
+
+	this->ACReg = this->ACReg ^ this->FetchedData;
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg  & 0x0080);
+
+	return 0;
+}
+
+
+// Increments value at memory.
+// M[AbsoluteValue]++
+// Sets flags N and Z.
+std::uint8_t proc6502::INC()
+{
+	this->fetch();
+
+	this->TempReg = static_cast<std::uint16_t>(this->FetchedData) + 1;
+
+	this->write(this->AbsoluteAddress, this->TempReg & 0x00FF);
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+
+	return 0;
+
+}
+
+// Increments value at XReg.
+// XReg++
+// Sets flags N and Z.
+std::uint8_t proc6502::INX()
+{
+	this->XReg = (this->XReg) + 1;
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->XReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->XReg  & 0x0080);
+
+	return 0;
+}
+
+
+// Increments value at YReg.
+// YReg++
+// Sets flags N and Z.
+std::uint8_t proc6502::INY()
+{
+	this->YReg = (this->YReg) + 1;
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->YReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->YReg  & 0x0080);
+
 	return 0;
 }
 
