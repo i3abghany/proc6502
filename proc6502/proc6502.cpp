@@ -231,6 +231,50 @@ std::uint8_t proc6502::fetch()
 	return 0;
 }
 
+std::uint8_t proc6502::ADC()
+{
+	this->fetch();
+
+	this->TempReg = static_cast<uint16_t>(this->FetchedData) + static_cast<uint16_t>(this->ACReg) + this->GetFlag(proc6502::FLAGS6502::C);
+
+	this->SetFlag(proc6502::FLAGS6502::C, this->TempReg > 0x00FF);
+	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+
+	bool ResMSB = this->TempReg & 0x0080;
+	bool FetchedMSB = this->FetchedData & 0x0080;
+	bool AcMSB = this->ACReg & 0x0080;
+
+	this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ ACReg) & ~(FetchedMSB ^ ACReg));
+	
+	this->ACReg = this->TempReg & 0x00FF;
+
+	return 1;
+}
+
+std::uint8_t proc6502::SBC()
+{
+	this->fetch();
+
+	std::uint16_t InvertedValue = this->FetchedData ^ 0x00FF;
+
+	this->TempReg = InvertedValue + static_cast<uint16_t>(this->ACReg) + this->GetFlag(proc6502::FLAGS6502::C);
+
+	this->SetFlag(proc6502::FLAGS6502::C, this->TempReg > 0x00FF);
+	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+
+	bool ResMSB = this->TempReg & 0x0080;
+	bool FetchedMSB = this->FetchedData & 0x0080;
+	bool AcMSB = this->ACReg & 0x0080;
+
+	this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ ACReg) & ~(FetchedMSB ^ ACReg));
+
+	this->ACReg = this->TempReg & 0x00FF;
+
+	return 1;
+}
+
 
 std::uint8_t proc6502::AND()
 {
@@ -390,4 +434,10 @@ std::uint8_t proc6502::CLC()
 	return 0;
 }
 
+
+std::uint8_t proc6502::CLD()
+{
+	this->SetFlag(proc6502::FLAGS6502::D, false);
+	return 0;
+}
 
