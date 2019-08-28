@@ -258,29 +258,6 @@ std::uint8_t proc6502::ADC()
 	return 1;
 }
 
-std::uint8_t proc6502::SBC()
-{
-	this->fetch();
-
-	std::uint16_t InvertedValue = this->FetchedData ^ 0x00FF;
-
-	this->TempReg = InvertedValue + static_cast<uint16_t>(this->ACReg) + this->GetFlag(proc6502::FLAGS6502::C);
-
-	this->SetFlag(proc6502::FLAGS6502::C, this->TempReg > 0x00FF);
-	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
-
-	bool ResMSB = this->TempReg & 0x0080;
-	bool FetchedMSB = this->FetchedData & 0x0080;
-	bool AcMSB = this->ACReg & 0x0080;
-
-	this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ AcMSB) & ~(FetchedMSB ^ AcMSB));
-
-	this->ACReg = this->TempReg & 0x00FF;
-
-	return 1;
-}
-
 std::uint8_t proc6502::AND()
 {
 	this->fetch();
@@ -571,7 +548,6 @@ std::uint8_t proc6502::EOR()
 	return 0;
 }
 
-
 // Increments value at memory.
 // M[AbsoluteValue]++
 // Sets flags N and Z.
@@ -591,7 +567,7 @@ std::uint8_t proc6502::INC()
 }
 
 // Increments value at XReg.
-// XReg++
+// XReg = XReg + 1
 // Sets flags N and Z.
 std::uint8_t proc6502::INX()
 {
@@ -605,7 +581,7 @@ std::uint8_t proc6502::INX()
 
 
 // Increments value at YReg.
-// YReg++
+// YReg = YReg + 1
 // Sets flags N and Z.
 std::uint8_t proc6502::INY()
 {
@@ -625,6 +601,7 @@ std::uint8_t proc6502::JMP()
 }
 
 // Jump to sub routine address.
+// Saves PC on the stack as two 8-bit halves.
 std::uint8_t proc6502::JSR()
 {
 	--this->PCReg;
@@ -640,6 +617,8 @@ std::uint8_t proc6502::JSR()
 	return 0;
 }
 
+// Load data to the ACReg.
+// Sets flags Z and N.
 std::uint8_t proc6502::LDA()
 {
 	this->fetch();
@@ -652,6 +631,8 @@ std::uint8_t proc6502::LDA()
 	return 0;
 }
 
+// Load data to the XReg.
+// Sets flags Z and N.
 std::uint8_t proc6502::LDX()
 {
 	this->fetch();
@@ -664,6 +645,8 @@ std::uint8_t proc6502::LDX()
 	return 0;
 }
 
+// Loads data to the YReg.
+// Sets flags Z, N.
 std::uint8_t proc6502::LDY()
 {
 	this->fetch();
@@ -676,6 +659,10 @@ std::uint8_t proc6502::LDY()
 	return 0;
 }
 
+// Logical shift right.
+// Sets flags C, Z, and N.
+// it can be used with implied addressing mode
+// it then will store the result in ACReg.
 std::uint8_t proc6502::LSR()
 {
 	this->fetch();
@@ -698,4 +685,223 @@ std::uint8_t proc6502::LSR()
 	
 	return 0;
 }
+
+
+// OR fetched data from Memory with Accumulator
+// ACReg |= FetchedData.
+// Sets flags N and Z.
+std::uint8_t proc6502::ORA()
+{
+	this->fetch();
+	
+	this->ACReg = this->ACReg | this->FetchedData;
+
+	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
+	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+
+	return 1;
+}
+
+// Pushes accumulator to the stack.
+std::uint8_t proc6502::PHA()
+{
+	this->write(this->StackStart + this->SPReg, this->ACReg);
+	--this->SPReg;
+
+	return 0;
+}
+
+// Pushes status register to the stack.
+// Break flag is set before pushing.
+std::uint8_t proc6502::PHP()
+{
+	this->STReg |= proc6502::FLAGS6502::B;
+	this->STReg |= proc6502::FLAGS6502::U;
+
+	this->write(this->StackStart + this->SPReg, this->STReg);
+
+	this->SetFlag(proc6502::FLAGS6502::B, false);
+	this->SetFlag(proc6502::FLAGS6502::U, false);
+
+	--this->SPReg;
+
+	return 0;
+}
+
+
+// Pop accumulator from the stack and set flags.
+std::uint8_t proc6502::PLA()
+{
+	++this->SPReg;
+	
+	this->ACReg = this->read(this->StackStart + this->SPReg);
+	
+	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
+	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+
+	return 0;
+}
+
+
+// Pop status register from the stack.
+std::uint8_t proc6502::PLP()
+{
+	++this->SPReg;
+
+	this->STReg = this->read(this->StackStart + this->SPReg);
+	
+	this->SetFlag(proc6502::FLAGS6502::U, true);
+
+	return 0;
+}
+
+// Rotates one bit to the left with carry flag.
+// Sets N, C and Z flags.
+std::uint8_t proc6502::ROL()
+{
+	this->fetch();
+	
+	this->TempReg = (this->FetchedData << 1) | this->GetFlag(proc6502::FLAGS6502::C);
+
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+	this->SetFlag(proc6502::FLAGS6502::C, this->TempReg & 0xFF00);
+	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
+
+	if (this->InstructionLookupTable[this->OpCode].AddressMode == &proc6502::IMP)
+	{
+		this->ACReg = static_cast<std::uint8_t>(this->TempReg & 0x00FF);
+	}
+	else
+	{
+		this->write(this->AbsoluteAddress, static_cast<std::uint8_t>(this->TempReg & 0x00FF));
+	}
+	return 0;
+}
+
+// Rotates one bit to the right with carry flag.
+// Sets N, C and Z flags.
+std::uint8_t proc6502::ROR()
+{
+	this->fetch();
+
+	this->TempReg = (this->FetchedData >> 1) | (static_cast<std::uint16_t>(this->GetFlag(proc6502::FLAGS6502::C )) << 7);
+
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+	this->SetFlag(proc6502::FLAGS6502::C, this->FetchedData & 0x01);
+	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
+
+	if (this->InstructionLookupTable[this->OpCode].AddressMode == &proc6502::IMP)
+	{
+		this->ACReg = static_cast<std::uint8_t>(this->TempReg & 0x00FF);
+	}
+	else
+	{
+		this->write(this->AbsoluteAddress, static_cast<std::uint8_t>(this->TempReg & 0x00FF));
+	}
+	return 0;
+}
+
+std::uint8_t proc6502::RTI()
+{
+	++this->SPReg;
+	this->STReg = this->read(this->StackStart + this->SPReg);
+
+	this->SetFlag(proc6502::FLAGS6502::B, false);
+	this->SetFlag(proc6502::FLAGS6502::U, false);
+
+	++this->SPReg;
+	this->PCReg = this->read(this->StackStart + this->SPReg);
+
+	++this->SPReg;
+	this->PCReg |= (this->read(this->StackStart + this->SPReg) << 8);
+
+	return 0;
+}
+
+std::uint8_t proc6502::RTS()
+{
+	++this->SPReg;
+	this->PCReg = this->read(this->StackStart + this->SPReg);
+
+	++this->SPReg;
+	this->PCReg |= (this->read(this->StackStart + this->SPReg) << 8);
+
+	++this->PCReg;
+
+	return 0;
+}
+
+
+std::uint8_t proc6502::SBC()
+{
+	this->fetch();
+
+	std::uint16_t InvertedValue = this->FetchedData ^ 0x00FF;
+
+	this->TempReg = InvertedValue + static_cast<uint16_t>(this->ACReg) + this->GetFlag(proc6502::FLAGS6502::C);
+
+	this->SetFlag(proc6502::FLAGS6502::C, this->TempReg > 0x00FF);
+	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
+	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+
+	bool ResMSB = this->TempReg & 0x0080;
+	bool FetchedMSB = this->FetchedData & 0x0080;
+	bool AcMSB = this->ACReg & 0x0080;
+
+	this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ AcMSB) & ~(FetchedMSB ^ AcMSB));
+
+	this->ACReg = this->TempReg & 0x00FF;
+
+	return 1;
+}
+
+std::uint8_t proc6502::SEC()
+{
+	this->SetFlag(proc6502::FLAGS6502::C, true);
+	return 0;
+}
+
+std::uint8_t proc6502::SED()
+{
+	this->SetFlag(proc6502::FLAGS6502::D, true);
+	return 0;
+}
+
+std::uint8_t proc6502::SEI()
+{
+	this->SetFlag(proc6502::FLAGS6502::I, true);
+	return 0;
+}
+
+
+std::uint8_t proc6502::STA()
+{
+	this->write(this->AbsoluteAddress, this->ACReg);
+	return 0;
+}
+
+std::uint8_t proc6502::STX()
+{
+	this->write(this->AbsoluteAddress, this->XReg);
+	return 0;
+}
+
+std::uint8_t proc6502::STY()
+{
+	this->write(this->AbsoluteAddress, this->YReg);
+	return 0;
+}
+
+std::uint8_t proc6502::TAX()
+{
+	this->XReg = this->ACReg;
+	return 0;
+}
+
+std::uint8_t proc6502::TAY()
+{
+	this->YReg = this->ACReg;
+	return 0;
+}
+
 
