@@ -30,9 +30,9 @@ public:
 	std::uint8_t   XReg =   0x00; // X register.
 	std::uint8_t   YReg =   0x00; // Y register.
 	std::uint8_t  SPReg =   0x00; // Stack pointer register.
-	std::uint16_t PCReg = 0x0000; // Program Counter register.
 	std::uint8_t  STReg =   0x00; // Status register.
-	
+	std::uint16_t PCReg = 0x0000; // Program Counter register.
+
 	static constexpr std::uint16_t StackStart = 0x0100; // Location of stack in the main memory.
 
 
