@@ -63,6 +63,37 @@ void proc6502::clock()
 	--this->Cycles;
 }
 
+void proc6502::reset()
+{
+	this->AbsoluteAddress = this->OriginLine;
+
+	std::uint16_t lo = this->read(this->AbsoluteAddress + 0);
+	std::uint16_t hi = this->read(this->AbsoluteAddress + 1);
+
+	this->PCReg = (hi << 8) | lo;
+
+	this->ACReg = 0;
+	this->XReg = 0;
+	this->YReg = 0;
+
+	this->SPReg = 0xFD;
+	this->STReg = 0x00;
+
+	this->SetFlag(proc6502::FLAGS6502::U, true);
+
+	this->AbsoluteAddress = 0x0000;
+	this->RelativeAddress = 0x0000;
+
+	this->FetchedData = 0x00;
+
+	this->Cycles = 8;
+}
+
+bool proc6502::InstructionComplete()
+{
+	return this->Cycles == 8;
+}
+
 std::uint8_t proc6502::GetFlag(proc6502::FLAGS6502 f)
 {
 	return ((this->STReg & f) > 0) ? 1 : 0;
@@ -219,7 +250,7 @@ std::uint8_t proc6502::IZX()
 
 	this->AbsoluteAddress = (hi << 8) | lo;
 
-	if (this->AbsoluteAddress & 0xFF00 != hi << 8)
+	if ((this->AbsoluteAddress & 0xFF00) != hi << 8)
 	{
 		return 1;
 	}
@@ -242,7 +273,7 @@ std::uint8_t proc6502::IZY()
 	this->AbsoluteAddress = (hi << 8) | lo;
 	this->AbsoluteAddress += this->YReg;
 
-	if (this->AbsoluteAddress & 0xFF00 != hi << 8)
+	if ((this->AbsoluteAddress & 0xFF00) != hi << 8)
 	{
 		return 1;
 	}
@@ -772,6 +803,11 @@ std::uint8_t proc6502::ORA()
 	return 1;
 }
 
+std::uint8_t proc6502::NOP()
+{
+	return 0;
+}
+
 // Pushes accumulator to the stack.
 std::uint8_t proc6502::PHA()
 {
@@ -1045,3 +1081,10 @@ std::uint8_t proc6502::TYA()
 
 	return 0;
 }
+
+std::uint8_t proc6502::XXX()
+{
+	return std::uint8_t(0);
+}
+
+

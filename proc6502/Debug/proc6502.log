@@ -1,26 +1,25 @@
-﻿  proc6502.cpp
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::BRK(void)" (?BRK@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::NOP(void)" (?NOP@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::ORA(void)" (?ORA@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::PHA(void)" (?PHA@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::PHP(void)" (?PHP@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::PLA(void)" (?PLA@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::PLP(void)" (?PLP@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::ROL(void)" (?ROL@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::ROR(void)" (?ROR@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::RTI(void)" (?RTI@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::RTS(void)" (?RTS@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::SEC(void)" (?SEC@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::SED(void)" (?SED@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::SEI(void)" (?SEI@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::STA(void)" (?STA@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::STX(void)" (?STX@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::STY(void)" (?STY@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::TAX(void)" (?TAX@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::TAY(void)" (?TAY@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::TSX(void)" (?TSX@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::TXA(void)" (?TXA@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::TXS(void)" (?TXS@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::TYA(void)" (?TYA@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-proc6502.obj : error LNK2019: unresolved external symbol "private: unsigned char __thiscall proc6502::XXX(void)" (?XXX@proc6502@@AAEEXZ) referenced in function "public: __thiscall proc6502::proc6502(void)" (??0proc6502@@QAE@XZ)
-C:\Users\pi\source\repos\proc6502\Debug\proc6502.exe : fatal error LNK1120: 24 unresolved externals
+﻿  Bus.cpp
+C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C7525: inline variables require at least '/std:c++17'
+C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C2864: 'proc6502::InstructionLookupTable': a static data member with an in-class initializer must have non-volatile const integral type or be specified as 'inline'
+  C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(137): note: type is 'const std::vector<proc6502::INSTRUCTION,std::allocator<_Ty>>'
+          with
+          [
+              _Ty=proc6502::INSTRUCTION
+          ]
+  main.cpp
+C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C7525: inline variables require at least '/std:c++17'
+C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C2864: 'proc6502::InstructionLookupTable': a static data member with an in-class initializer must have non-volatile const integral type or be specified as 'inline'
+  C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(137): note: type is 'const std::vector<proc6502::INSTRUCTION,std::allocator<_Ty>>'
+          with
+          [
+              _Ty=proc6502::INSTRUCTION
+          ]
+  proc6502.cpp
+C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C7525: inline variables require at least '/std:c++17'
+C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C2864: 'proc6502::InstructionLookupTable': a static data member with an in-class initializer must have non-volatile const integral type or be specified as 'inline'
+  C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(137): note: type is 'const std::vector<proc6502::INSTRUCTION,std::allocator<_Ty>>'
+          with
+          [
+              _Ty=proc6502::INSTRUCTION
+          ]
+  Generating Code...
