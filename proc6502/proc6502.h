@@ -22,7 +22,7 @@ public:
 		B = (1 << 4),	// Break
 		U = (1 << 5),	// Unused
 		V = (1 << 6),	// Overflow
-		N = (1 << 7),	// Negative
+		N = (1 << 7)	// Negative
 	};
 
 public:
@@ -71,6 +71,7 @@ private:
 	std::uint8_t IND();
 	std::uint8_t IZX();
 	std::uint8_t IZY();
+
 private:
 	// OPCODES
 	// 6502 processor has 52 operations.
@@ -91,20 +92,22 @@ private:
 
 	std::uint8_t XXX();
 
-	void clock();
+private:
+	void clock(); 
 	void reset();
 	void irq();
 	void nmi();
-
+	 
 	std::uint8_t fetch();
 
-	std::uint8_t  FetchedData     =   0x00;
-	std::uint16_t TempReg        =  0x0000;
-	std::uint16_t AbsoluteAddress = 0x0000;
-	std::uint16_t RelativeAddress =   0x00;
-	std::uint8_t  OpCode          =   0x00;
-	std::uint8_t  Cycles          =      0;
+	std::uint8_t  FetchedData     =    0x00;
+	std::uint16_t TempReg         =  0x0000;
+	std::uint16_t AbsoluteAddress =  0x0000;
+	std::uint16_t RelativeAddress =    0x00;
+	std::uint8_t  OpCode          =    0x00;
+	std::uint8_t  Cycles          =       0;
 	
+private: 
 	struct INSTRUCTION
 	{
 		std::string name;

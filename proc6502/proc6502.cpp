@@ -89,15 +89,85 @@ void proc6502::reset()
 	this->Cycles = 8;
 }
 
+
+// Interrupt requests only happen if the interrupt disable flag is set to false.
+// It pushed PCReg and STReg to the stack, then reads  PC from a fixed address 0xFFFE.
+// Then the program should return from the interrupt using RTI().
+void proc6502::irq()
+{
+	auto InterruptMask = this->GetFlag(proc6502::FLAGS6502::I);
+	if (!InterruptMask)
+	{
+		return;
+	}
+
+	this->write(this->StackStart + this->SPReg, (this->PCReg >> 8) & 0x00FF);
+	--this->SPReg;
+	this->write(this->StackStart + this->SPReg, this->PCReg & 0x00FF);
+	--this->SPReg;
+
+	this->SetFlag(proc6502::FLAGS6502::U, true);
+	this->SetFlag(proc6502::FLAGS6502::B, false);
+	this->SetFlag(proc6502::FLAGS6502::I, true);
+
+	this->write(this->StackStart + this->SPReg, this->STReg);
+	--this->SPReg;
+
+	this->AbsoluteAddress = 0xFFFE;
+	std::uint8_t lo = this->read(this->AbsoluteAddress + 0);
+	std::uint8_t hi = this->read(this->AbsoluteAddress + 1);
+
+	this->PCReg = (hi << 8) | lo;
+
+	this->Cycles = 7;
+
+}
+
+
+// Same as IRQ, but it takes the PCReg from the fixed address 0xFFFA.
+void proc6502::nmi()
+{
+	auto InterruptMask = this->GetFlag(proc6502::FLAGS6502::I);
+	if (!InterruptMask)
+	{
+		return;
+	}
+
+	this->write(this->StackStart + this->SPReg, (this->PCReg >> 8) & 0x00FF);
+	--this->SPReg;
+	this->write(this->StackStart + this->SPReg, this->PCReg & 0x00FF);
+	--this->SPReg;
+
+	this->SetFlag(proc6502::FLAGS6502::U, true);
+	this->SetFlag(proc6502::FLAGS6502::B, false);
+	this->SetFlag(proc6502::FLAGS6502::I, true);
+
+	this->write(this->StackStart + this->SPReg, this->STReg);
+	--this->SPReg;
+
+	this->AbsoluteAddress = 0xFFFA;
+	std::uint8_t lo = this->read(this->AbsoluteAddress + 0);
+	std::uint8_t hi = this->read(this->AbsoluteAddress + 1);
+
+	this->PCReg = (hi << 8) | lo;
+
+	this->Cycles = 8;
+
+}
+
+
+
 bool proc6502::InstructionComplete()
 {
 	return this->Cycles == 8;
 }
 
+
 std::uint8_t proc6502::GetFlag(proc6502::FLAGS6502 f)
 {
 	return ((this->STReg & f) > 0) ? 1 : 0;
 }
+
 
 void proc6502::SetFlag(proc6502::FLAGS6502 f, bool val)
 {
@@ -1082,9 +1152,9 @@ std::uint8_t proc6502::TYA()
 	return 0;
 }
 
+// catches all the wrong opcodes.
+// TODO: syntax errors handling.
 std::uint8_t proc6502::XXX()
 {
 	return std::uint8_t(0);
 }
-
-

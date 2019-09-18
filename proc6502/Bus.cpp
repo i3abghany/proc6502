@@ -8,7 +8,6 @@ Bus::Bus()
 	cpu.ConnectBus(this);
 }
 
-
 std::uint8_t Bus::read(std::uint16_t addr, bool readOnly)
 {
 	if (addr <= 0x0000 || addr >= 0xFFFF)

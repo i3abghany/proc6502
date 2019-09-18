@@ -1,25 +1,2 @@
-﻿  Bus.cpp
-C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C7525: inline variables require at least '/std:c++17'
-C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C2864: 'proc6502::InstructionLookupTable': a static data member with an in-class initializer must have non-volatile const integral type or be specified as 'inline'
-  C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(137): note: type is 'const std::vector<proc6502::INSTRUCTION,std::allocator<_Ty>>'
-          with
-          [
-              _Ty=proc6502::INSTRUCTION
-          ]
-  main.cpp
-C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C7525: inline variables require at least '/std:c++17'
-C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C2864: 'proc6502::InstructionLookupTable': a static data member with an in-class initializer must have non-volatile const integral type or be specified as 'inline'
-  C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(137): note: type is 'const std::vector<proc6502::INSTRUCTION,std::allocator<_Ty>>'
-          with
-          [
-              _Ty=proc6502::INSTRUCTION
-          ]
-  proc6502.cpp
-C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C7525: inline variables require at least '/std:c++17'
-C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(120): error C2864: 'proc6502::InstructionLookupTable': a static data member with an in-class initializer must have non-volatile const integral type or be specified as 'inline'
-  C:\Users\pi\source\repos\proc6502\proc6502\proc6502.h(137): note: type is 'const std::vector<proc6502::INSTRUCTION,std::allocator<_Ty>>'
-          with
-          [
-              _Ty=proc6502::INSTRUCTION
-          ]
-  Generating Code...
+﻿  main.cpp
+  proc6502.vcxproj -> C:\Users\pi\source\repos\proc6502\Debug\proc6502.exe
