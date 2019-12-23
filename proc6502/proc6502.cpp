@@ -39,8 +39,10 @@ std::uint8_t proc6502::read(std::uint16_t addr)
 
 void proc6502::write(std::uint16_t addr, std::uint8_t data)
 {
-	this->bus->ram[addr] = data;
+	this->bus->write(addr, data);
 }
+
+
 
 void proc6502::clock()
 {
@@ -154,8 +156,6 @@ void proc6502::nmi()
 	this->Cycles = 8;
 
 }
-
-
 
 bool proc6502::InstructionComplete()
 {
