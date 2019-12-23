@@ -1,1 +1,4 @@
 /.vs
+/Debug
+/proc6502/Debug
+/proc6502/x64
