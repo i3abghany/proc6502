@@ -42,7 +42,123 @@ void proc6502::write(std::uint16_t addr, std::uint8_t data)
 	this->bus->write(addr, data);
 }
 
+std::string proc6502::ToHex(std::uint32_t n, std::uint32_t d)
+{
+	std::string res(d, '0');
+	for (int i = d - 1; i >= 0; i--, n >>= 4)
+	{
+		res[i] = "0123456789ABCDEF"[n & 0xF];
+	}
+	return res;
+}
 
+std::map<std::uint16_t, std::string> proc6502::disassemble(const std::uint8_t start, const std::uint8_t stop)
+{
+	std::uint32_t addr = start;
+	std::uint8_t value = 0x00, lo = 0x00, hi = 0x00;
+	std::map<std::uint16_t, std::string> MapLines;
+	std::uint16_t LineAddress = 0;
+
+	for (; addr <= static_cast<std::uint32_t>(stop); )
+	{
+		LineAddress = addr;
+		std::string StringInstruction = "$" + proc6502::ToHex(addr, 4) + ": ";
+		std::uint8_t OpCode = this->bus->read(addr, true);
+		addr++;
+		StringInstruction += this->InstructionLookupTable[OpCode].name + " ";
+
+		auto AddrMode = this->InstructionLookupTable[OpCode].AddressMode;
+
+		using p = proc6502;
+		if (AddrMode == &p::IMP)
+		{
+			StringInstruction += " {IMP}";
+		}
+		else if (AddrMode == &p::IMM)
+		{
+			value = this->bus->read(addr, true);
+			++addr;
+			StringInstruction += "#$" + proc6502::ToHex(value, 2) + "{IMM}";
+		}
+		else if (AddrMode == &p::ZP0)
+		{
+			lo = this->bus->read(addr, true);
+			++addr;
+			hi = 0x00;
+			StringInstruction += "$" + proc6502::ToHex(lo, 2) + " {ZP0}";
+		}
+		else if (AddrMode == &p::ZPX)
+		{
+			lo = this->bus->read(addr, true);
+			++addr;
+			hi = 0x00;
+			StringInstruction += " X {ZPX}";
+		}
+		else if (AddrMode == &p::ZPY)
+		{
+			lo = this->bus->read(addr, true);
+			++addr;
+			hi = 0x00;
+			StringInstruction += " Y {ZPY}";
+		}
+		else if (AddrMode == &p::IZX)
+		{
+			lo = this->bus->read(addr, true);
+			++addr;
+			hi = 0x00;
+			StringInstruction += "($" + proc6502::ToHex(lo, 2) + ", X) {IZX}";
+		}
+		else if (AddrMode == &p::IZY)
+		{
+			lo = this->bus->read(addr, true);
+			++addr;
+			hi = 0x00;
+			StringInstruction += "($" + proc6502::ToHex(lo, 2) + ", Y) {IZY}";
+		}
+		else if (AddrMode == &p::ABS)
+		{
+			lo = this->bus->read(addr, true);
+			addr++;
+			hi = this->bus->read(addr, true);
+			addr++;
+			StringInstruction += "$" + proc6502::ToHex((static_cast<std::uint16_t>(hi) << 8 | lo), 4) + " {ABS}";
+		}
+		else if (AddrMode == &p::ABX)
+		{
+			lo = this->bus->read(addr, true);
+			addr++;
+			hi = this->bus->read(addr, true);
+			addr++;
+			StringInstruction += "$" + proc6502::ToHex((static_cast<std::uint16_t>(hi) << 8 | lo), 4) + " X {ABX}";
+		}
+		else if (AddrMode == &p::ABY)
+		{
+			lo = this->bus->read(addr, true);
+			addr++;
+			hi = this->bus->read(addr, true);
+			addr++;
+			StringInstruction += "$" + proc6502::ToHex((static_cast<std::uint16_t>(hi) << 8 | lo), 4) + " Y {ABY}";
+		}
+		else if (AddrMode == &p::IND)
+		{
+			lo = this->bus->read(addr, true);
+			addr++;
+			hi = this->bus->read(addr, true);
+			addr++;
+			StringInstruction += "($" + proc6502::ToHex((static_cast<std::uint16_t>(hi) << 8 | lo), 4) + ") {IND}";
+		}
+		else if (AddrMode == &p::REL)
+		{
+			value = bus->read(addr, true);
+			addr++;
+			StringInstruction += "$" + proc6502::ToHex(value, 2) + " [$" + proc6502::ToHex(addr + value, 4) + "] {REL}";
+		}
+
+		MapLines[LineAddress] = StringInstruction;
+	}
+
+	return MapLines;
+}
 
 void proc6502::clock()
 {
@@ -125,6 +241,29 @@ void proc6502::irq()
 
 }
 
+std::uint8_t proc6502::BRK()
+{
+	++this->PCReg;
+
+	this->SetFlag(proc6502::FLAGS6502::I, 1);
+	
+	this->write(this->StackStart + this->SPReg, (this->PCReg >> 8) & 0x00FF);
+	--this->SPReg;
+
+	this->write(this->StackStart + this->SPReg, this->PCReg & 0x00FF);
+	--this->SPReg;
+
+	this->SetFlag(proc6502::FLAGS6502::B, 1);
+
+	this->write(this->StackStart + this->SPReg, this->STReg);
+	--this->SPReg;
+
+	this->SetFlag(proc6502::FLAGS6502::B, 0);
+
+	this->PCReg = static_cast<std::uint16_t>(this->read(0xFFFE)) | static_cast<std::uint16_t>(this->read(0xFFFE) << 8);
+	
+	return 0;
+}
 
 // Same as IRQ, but it takes the PCReg from the fixed address 0xFFFA.
 void proc6502::nmi()

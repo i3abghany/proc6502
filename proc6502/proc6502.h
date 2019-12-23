@@ -38,10 +38,9 @@ public:
 
 	void ConnectBus(Bus*);
 
-
-
 	bool InstructionComplete();
 
+	static std::string ToHex(std::uint32_t, std::uint32_t);
 	std::map<std::uint16_t, std::string> disassemble(const std::uint8_t start, const std::uint8_t stop);
 
 
