@@ -58,7 +58,7 @@ std::map<uint16_t, std::string> proc6502::disassemble(const uint16_t start, cons
 	std::map<uint16_t, std::string> MapLines;
 	uint16_t LineAddress = 0;
 
-	for (; addr <= static_cast<uint32_t>(stop);)
+	for (; addr <= (uint32_t)(stop);)
 	{
 		LineAddress = addr;
 		std::string StringInstruction = "$" + proc6502::hex(addr, 4) + ": ";
@@ -120,7 +120,7 @@ std::map<uint16_t, std::string> proc6502::disassemble(const uint16_t start, cons
 			addr++;
 			hi = bus->read(addr);
 			addr++;
-			StringInstruction += "$" + proc6502::hex((static_cast<uint16_t>(hi) << 8 | lo), 4) + " {ABS}";
+			StringInstruction += "$" + proc6502::hex(((uint16_t)(hi) << 8 | lo), 4) + " {ABS}";
 		}
 		else if (AddrMode == &p::ABX)
 		{
@@ -128,7 +128,7 @@ std::map<uint16_t, std::string> proc6502::disassemble(const uint16_t start, cons
 			addr++;
 			hi = bus->read(addr);
 			addr++;
-			StringInstruction += "$" + proc6502::hex((static_cast<uint16_t>(hi) << 8 | lo), 4) + " X {ABX}";
+			StringInstruction += "$" + proc6502::hex(((uint16_t)(hi) << 8 | lo), 4) + " X {ABX}";
 		}
 		else if (AddrMode == &p::ABY)
 		{
@@ -136,7 +136,7 @@ std::map<uint16_t, std::string> proc6502::disassemble(const uint16_t start, cons
 			addr++;
 			hi = bus->read(addr);
 			addr++;
-			StringInstruction += "$" + proc6502::hex((static_cast<uint16_t>(hi) << 8 | lo), 4) + " Y {ABY}";
+			StringInstruction += "$" + proc6502::hex(((uint16_t)(hi) << 8 | lo), 4) + " Y {ABY}";
 		}
 		else if (AddrMode == &p::IND)
 		{
@@ -144,7 +144,7 @@ std::map<uint16_t, std::string> proc6502::disassemble(const uint16_t start, cons
 			addr++;
 			hi = bus->read(addr);
 			addr++;
-			StringInstruction += "($" + proc6502::hex((static_cast<uint16_t>(hi) << 8 | lo), 4) + ") {IND}";
+			StringInstruction += "($" + proc6502::hex(((uint16_t)(hi) << 8 | lo), 4) + ") {IND}";
 		}
 		else if (AddrMode == &p::REL)
 		{
@@ -278,7 +278,7 @@ uint8_t proc6502::BRK()
 
 	SetFlag(FLAGS6502::B, 0);
 
-	pc = static_cast<uint16_t>(read(0xFFFE)) | static_cast<uint16_t>(read(0xFFFE) << 8);
+	pc = (uint16_t)(read(0xFFFE)) | (uint16_t)(read(0xFFFE) << 8);
 	
 	return 0;
 }
@@ -468,8 +468,8 @@ uint8_t proc6502::IZX()
 	uint16_t addr = read(pc);
 	++pc;
 
-	uint16_t lo = read(addr & 0x00FF);
-	uint16_t hi = read((addr + 1) & 0x00FF);
+	uint16_t lo = read((uint16_t)(addr + (uint16_t)XReg) & 0x00FF);
+	uint16_t hi = read((uint16_t)(addr + (uint16_t)XReg + 1) & 0x00FF);
 
 	AbsoluteAddress = (hi << 8) | lo;
 
@@ -541,7 +541,7 @@ uint8_t proc6502::ADC()
 {
 	fetch();
 
-	temp = static_cast<uint16_t>(FetchedData) + static_cast<uint16_t>(AC) + GetFlag(FLAGS6502::C);
+	temp = (uint16_t)(FetchedData) + (uint16_t)(AC) + GetFlag(FLAGS6502::C);
 
 	SetFlag(FLAGS6502::C, temp > 0x00FF);
 	SetFlag(FLAGS6502::Z, temp == 0x0000);
@@ -575,7 +575,7 @@ uint8_t proc6502::AND()
 uint8_t proc6502::ASL()
 {
 	fetch();
-	temp = static_cast<uint16_t>(FetchedData) << 1;
+	temp = (uint16_t)(FetchedData) << 1;
 
 	SetFlag(FLAGS6502::C, (temp & 0xFF00) > 0);
 	SetFlag(FLAGS6502::N, (temp & 0x80));
@@ -583,11 +583,11 @@ uint8_t proc6502::ASL()
 
 	if (InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
 	{
-		AC = static_cast<uint8_t>(temp) & 0xFF;
+		AC = (uint8_t)(temp) & 0xFF;
 	}
 	else
 	{
-		write(AbsoluteAddress, static_cast<uint8_t>(temp));
+		write(AbsoluteAddress, (uint8_t)(temp));
 	}
 	return 0;
 }
@@ -771,8 +771,8 @@ uint8_t proc6502::CLV()
 uint8_t proc6502::CMP()
 {
 	fetch();
-	temp = static_cast<uint16_t>(AC) - static_cast<uint16_t>(FetchedData);
-	
+	temp = (uint16_t)(AC) - (uint16_t)(FetchedData);
+
 	SetFlag(FLAGS6502::C, AC >= FetchedData);
 	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
 	SetFlag(FLAGS6502::N, temp & 0x0080);
@@ -783,7 +783,7 @@ uint8_t proc6502::CMP()
 uint8_t proc6502::CPX()
 {
 	fetch();
-	temp = static_cast<uint16_t>(AC) - static_cast<uint16_t>(XReg);
+	temp = (uint16_t)(AC) - (uint16_t)(XReg);
 
 	SetFlag(FLAGS6502::C, YReg >= FetchedData);
 	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
@@ -796,7 +796,7 @@ uint8_t proc6502::CPX()
 uint8_t proc6502::CPY()
 {
 	fetch();
-	temp = static_cast<uint16_t>(YReg) - static_cast<uint16_t>(YReg);
+	temp = (uint16_t)(YReg) - (uint16_t)(YReg);
 
 	SetFlag(FLAGS6502::C, YReg >= FetchedData);
 	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
@@ -813,7 +813,7 @@ uint8_t proc6502::DEC()
 {
 	fetch();
 	
-	temp = static_cast<uint16_t>(FetchedData) - 1;
+	temp = (uint16_t)(FetchedData) - 1;
 
 	write(AbsoluteAddress, temp & 0x00FF);
 
@@ -870,7 +870,7 @@ uint8_t proc6502::INC()
 {
 	fetch();
 
-	temp = static_cast<uint16_t>(FetchedData) + 1;
+	temp = (uint16_t)(FetchedData) + 1;
 
 	write(AbsoluteAddress, temp & 0x00FF);
 
@@ -988,11 +988,11 @@ uint8_t proc6502::LSR()
 	
 	if (InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
 	{
-		AC = static_cast<uint8_t>(temp & 0x00FF);
+		AC = (uint8_t)(temp & 0x00FF);
 	}
 	else
 	{
-		write(AbsoluteAddress, static_cast<uint8_t>(temp & 0x00FF));
+		write(AbsoluteAddress, (uint8_t)(temp & 0x00FF));
 	}
 	
 	return 0;
@@ -1085,11 +1085,11 @@ uint8_t proc6502::ROL()
 
 	if (InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
 	{
-		AC = static_cast<uint8_t>(temp & 0x00FF);
+		AC = (uint8_t)(temp & 0x00FF);
 	}
 	else
 	{
-		write(AbsoluteAddress, static_cast<uint8_t>(temp & 0x00FF));
+		write(AbsoluteAddress, (uint8_t)(temp & 0x00FF));
 	}
 	return 0;
 }
@@ -1100,7 +1100,7 @@ uint8_t proc6502::ROR()
 {
 	fetch();
 
-	temp = (FetchedData >> 1) | (static_cast<uint16_t>(GetFlag(FLAGS6502::C )) << 7);
+	temp = (FetchedData >> 1) | ((uint16_t)(GetFlag(FLAGS6502::C )) << 7);
 
 	SetFlag(FLAGS6502::N, temp & 0x0080);
 	SetFlag(FLAGS6502::C, FetchedData & 0x01);
@@ -1108,11 +1108,11 @@ uint8_t proc6502::ROR()
 
 	if (InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
 	{
-		AC = static_cast<uint8_t>(temp & 0x00FF);
+		AC = (uint8_t)(temp & 0x00FF);
 	}
 	else
 	{
-		write(AbsoluteAddress, static_cast<uint8_t>(temp & 0x00FF));
+		write(AbsoluteAddress, (uint8_t)(temp & 0x00FF));
 	}
 	return 0;
 }
@@ -1158,7 +1158,7 @@ uint8_t proc6502::SBC()
 
 	uint16_t InvertedValue = FetchedData ^ 0x00FF;
 
-	temp = InvertedValue + static_cast<uint16_t>(AC) + GetFlag(FLAGS6502::C);
+	temp = InvertedValue + (uint16_t)(AC) + GetFlag(FLAGS6502::C);
 
 	SetFlag(FLAGS6502::C, temp > 0x00FF);
 	SetFlag(FLAGS6502::Z, temp == 0x0000);
