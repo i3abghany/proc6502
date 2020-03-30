@@ -1,1 +1,2 @@
 # 6502
+With the help of OneLoneCoder, the ISA documentation available at https://www.masswerk.at/6502/6502_instruction_set.html, and the datasheet available at http://archive.6502.org/datasheets/rockwell_r650x_r651x.pdf
