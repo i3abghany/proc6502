@@ -181,7 +181,6 @@ void proc6502::clock()
 {
 	if (cycles == 0)
 	{
-
 		OpCode = read(pc);
 		++pc;
 
@@ -193,7 +192,6 @@ void proc6502::clock()
 		auto AdditionalClockCycles2 = (this->*InstructionLookupTable[OpCode].Operation)();
 		
 		cycles += (AdditionalClockCycles1 & AdditionalClockCycles2);
-		
 	}
 	--cycles;
 }
@@ -208,7 +206,7 @@ void proc6502::reset()
 	uint16_t lo = read(AbsoluteAddress + 0);
 	uint16_t hi = read(AbsoluteAddress + 1);
 
-	pc = (hi << 8) | lo;
+	pc = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
 
 	AC = 0;
 	XReg = 0;
@@ -253,7 +251,7 @@ void proc6502::irq()
 	uint8_t lo = read(AbsoluteAddress + 0);
 	uint8_t hi = read(AbsoluteAddress + 1);
 
-	pc = (hi << 8) | lo;
+	pc = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
 
 	cycles = 7;
 
@@ -263,7 +261,7 @@ uint8_t proc6502::BRK()
 {
 	++pc;
 
-	SetFlag(FLAGS6502::I, 1);
+	SetFlag(FLAGS6502::I, true);
 	
 	write(StackStart + stkp, (pc >> 8) & 0x00FF);
 	--stkp;
@@ -271,12 +269,12 @@ uint8_t proc6502::BRK()
 	write(StackStart + stkp, pc & 0x00FF);
 	--stkp;
 
-	SetFlag(FLAGS6502::B, 1);
+	SetFlag(FLAGS6502::B, true);
 
 	write(StackStart + stkp, status);
 	--stkp;
 
-	SetFlag(FLAGS6502::B, 0);
+	SetFlag(FLAGS6502::B, false);
 
 	pc = (uint16_t)(read(0xFFFE)) | (uint16_t)(read(0xFFFE) << 8);
 	
@@ -303,7 +301,7 @@ void proc6502::nmi()
 	uint8_t lo = read(AbsoluteAddress + 0);
 	uint8_t hi = read(AbsoluteAddress + 1);
 
-	pc = (hi << 8) | lo;
+	pc = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
 
 	cycles = 8;
 }
@@ -396,7 +394,7 @@ uint8_t proc6502::ABS()
 	uint16_t hi = read(pc);
 	++pc;
 
-	AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
 	return 0;
 }
 
@@ -409,7 +407,7 @@ uint8_t proc6502::ABX()
 	uint16_t hi = read(pc);
 	++pc;
 
-	AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
 	AbsoluteAddress += XReg;
 
 	// Reguires 1 more cycle if the incrementation by x
@@ -427,7 +425,7 @@ uint8_t proc6502::ABY()
 	uint16_t hi = read(pc);
 	++pc;
 
-	AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
 	AbsoluteAddress += YReg;
 
 	// Reguires 1 more cycle if the incrementation by x
@@ -471,7 +469,7 @@ uint8_t proc6502::IZX()
 	uint16_t lo = read((uint16_t)(addr + (uint16_t)XReg) & 0x00FF);
 	uint16_t hi = read((uint16_t)(addr + (uint16_t)XReg + 1) & 0x00FF);
 
-	AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
 
 	if ((AbsoluteAddress & 0xFF00) != hi << 8)
 	{
@@ -492,7 +490,7 @@ uint8_t proc6502::IZY()
 	uint16_t lo = read(addr & 0x00FF);
 	uint16_t hi = read((addr + 1) & 0x00FF);
 
-	AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
 	AbsoluteAddress += YReg;
 
 	if ((AbsoluteAddress & 0xFF00) != hi << 8)
@@ -1049,7 +1047,6 @@ uint8_t proc6502::PHP()
 uint8_t proc6502::PLA()
 {
 	++stkp;
-	
 	AC = read(StackStart + stkp);
 	
 	SetFlag(FLAGS6502::Z, AC == 0x00);
@@ -1063,7 +1060,6 @@ uint8_t proc6502::PLA()
 uint8_t proc6502::PLP()
 {
 	++stkp;
-
 	status = read(StackStart + stkp);
 	
 	SetFlag(FLAGS6502::U, true);
@@ -1128,10 +1124,12 @@ uint8_t proc6502::RTI()
 	SetFlag(FLAGS6502::U, false);
 
 	++stkp;
-	pc = read(StackStart + stkp);
-
-	++stkp;
-	pc |= (read(StackStart + stkp) << 8);
+	uint8_t lo = read(StackStart + stkp);
+	
+	stkp++;
+	uint8_t hi = read(StackStart + stkp);
+	
+	pc = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
 
 	return 0;
 }
@@ -1141,24 +1139,26 @@ uint8_t proc6502::RTI()
 uint8_t proc6502::RTS()
 {
 	++stkp;
-	pc = read(StackStart + stkp);
+	uint8_t lo = read(StackStart + stkp);
 
 	++stkp;
-	pc |= (read(StackStart + stkp) << 8);
+	uint8_t hi = read(StackStart + stkp);
 
+	pc = (uint16_t)((uint16_t)(hi << 8) | (uint16_t)(lo));
 	++pc;
 
 	return 0;
 }
 
 // Subtracts Fetched data from the AC register.
+// AC = AC - FetchedData - C.
 uint8_t proc6502::SBC()
 {
 	fetch();
 
-	uint16_t InvertedValue = FetchedData ^ 0x00FF;
+	uint16_t TwosComplement = ((uint16_t)FetchedData ^ 0x00FF) + 1;
 
-	temp = InvertedValue + (uint16_t)(AC) + GetFlag(FLAGS6502::C);
+	temp = TwosComplement + ~GetFlag(FLAGS6502::C) + 1 + (uint16_t)(AC);
 
 	SetFlag(FLAGS6502::C, temp > 0x00FF);
 	SetFlag(FLAGS6502::Z, temp == 0x0000);
@@ -1168,7 +1168,7 @@ uint8_t proc6502::SBC()
 	bool FetchedMSB = FetchedData & 0x0080;
 	bool AcMSB = AC & 0x0080;
 
-	SetFlag(FLAGS6502::V, (ResMSB ^ AcMSB) & ~(FetchedMSB ^ AcMSB));
+	SetFlag(FLAGS6502::V, (AcMSB & FetchedMSB & !ResMSB) | (!AcMSB & !FetchedMSB & ResMSB));
 
 	AC = temp & 0x00FF;
 
