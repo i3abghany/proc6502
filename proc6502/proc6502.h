@@ -13,7 +13,7 @@ public:
 	proc6502();
 	~proc6502() = default;
 
-	enum FLAGS6502 : std::uint8_t
+	enum FLAGS6502 : uint8_t
 	{
 		C = (1 << 0),	// Carry Bit
 		Z = (1 << 1),	// Zero
@@ -25,23 +25,22 @@ public:
 		N = (1 << 7)	// Negative
 	};
 
-public:
-	std::uint8_t  ACReg =   0x00; // accumulator register.
-	std::uint8_t   XReg =   0x00; // X register.
-	std::uint8_t   YReg =   0x00; // Y register.
-	std::uint8_t  SPReg =   0x00; // Stack pointer register.
-	std::uint8_t  STReg =   0x00; // Status register.
-	std::uint16_t PCReg = 0x0000; // Program Counter register.
+	uint8_t     AC  =   0x00; // accumulator register.
+	uint8_t   XReg  =   0x00; // X register.
+	uint8_t   YReg  =   0x00; // Y register.
+	uint8_t   stkp  =   0x00; // Stack pointer register.
+	uint8_t status  =   0x00; // Status register.
+	uint16_t    pc  = 0x0000; // Program Counter register.
 
-	static constexpr std::uint16_t StackStart = 0x0100; // Location of stack in the main memory.
-	static constexpr std::uint16_t OriginLine = 0xFFFC; // Start location after the reset.
+	static constexpr uint16_t StackStart = 0x0100; // Location of stack in the main memory.
+	static constexpr uint16_t OriginLine = 0xFFFC; // Start location after the reset.
 
 	void ConnectBus(Bus*);
 
 	bool InstructionComplete();
 
-	static std::string ToHex(std::uint32_t, std::uint32_t);
-	std::map<std::uint16_t, std::string> disassemble(const std::uint8_t start, const std::uint8_t stop);
+	static std::string hex(uint32_t, uint32_t);
+	std::map<uint16_t, std::string> disassemble(const uint8_t start, const uint8_t stop);
 
 
 private:
@@ -49,47 +48,41 @@ private:
 	uint8_t read(uint16_t a);
 	void    write(uint16_t a, uint8_t d);
 
-	std::uint8_t GetFlag(FLAGS6502);
+	uint8_t GetFlag(FLAGS6502);
 	void SetFlag(FLAGS6502, bool);
 
+	// Addressing modes of 6502 processor.
+	uint8_t IMP();
+	uint8_t IMM();
+	uint8_t ZP0();
+	uint8_t ZPX();
+	uint8_t ZPY();
+	uint8_t REL();
+	uint8_t ABS();
+	uint8_t ABX();
+	uint8_t ABY();
+	uint8_t IND();
+	uint8_t IZX();
+	uint8_t IZY();
 
 private:
+	// The 56 instructions of the 6502 ISA.
+	uint8_t ADC();	uint8_t AND(); uint8_t ASL();	uint8_t BCC();
+	uint8_t BCS();	uint8_t BEQ(); uint8_t BIT();	uint8_t BMI();
+	uint8_t BNE();	uint8_t BPL(); uint8_t BRK();	uint8_t BVC();
+	uint8_t BVS();	uint8_t CLC(); uint8_t CLD();	uint8_t CLI();
+	uint8_t CLV();	uint8_t CMP(); uint8_t CPX();	uint8_t CPY();
+	uint8_t DEC();	uint8_t DEX(); uint8_t DEY();	uint8_t EOR();
+	uint8_t INC();	uint8_t INX(); uint8_t INY();	uint8_t JMP();
+	uint8_t JSR();	uint8_t LDA(); uint8_t LDX();	uint8_t LDY();
+	uint8_t LSR();	uint8_t NOP(); uint8_t ORA();	uint8_t PHA();
+	uint8_t PHP();	uint8_t PLA(); uint8_t PLP();	uint8_t ROL();
+	uint8_t ROR();	uint8_t RTI(); uint8_t RTS();	uint8_t SBC();
+	uint8_t SEC();	uint8_t SED(); uint8_t SEI();	uint8_t STA();
+	uint8_t STX();	uint8_t STY(); uint8_t TAX();	uint8_t TAY();
+	uint8_t TSX();	uint8_t TXA(); uint8_t TXS();	uint8_t TYA();
 
-	//Addressing modes of 6502 processor.
-	//these functions will change the mode of addressing
-	//before executing the instruction. 
-	std::uint8_t IMP();
-	std::uint8_t IMM();
-	std::uint8_t ZP0();
-	std::uint8_t ZPX();
-	std::uint8_t ZPY();
-	std::uint8_t REL();
-	std::uint8_t ABS();
-	std::uint8_t ABX();
-	std::uint8_t ABY();
-	std::uint8_t IND();
-	std::uint8_t IZX();
-	std::uint8_t IZY();
-
-private:
-	// OPCODES
-	// 6502 processor has 52 operations.
-	std::uint8_t ADC();	std::uint8_t AND(); std::uint8_t ASL();	std::uint8_t BCC();
-	std::uint8_t BCS();	std::uint8_t BEQ(); std::uint8_t BIT();	std::uint8_t BMI();
-	std::uint8_t BNE();	std::uint8_t BPL(); std::uint8_t BRK();	std::uint8_t BVC();
-	std::uint8_t BVS();	std::uint8_t CLC(); std::uint8_t CLD();	std::uint8_t CLI();
-	std::uint8_t CLV();	std::uint8_t CMP(); std::uint8_t CPX();	std::uint8_t CPY();
-	std::uint8_t DEC();	std::uint8_t DEX(); std::uint8_t DEY();	std::uint8_t EOR();
-	std::uint8_t INC();	std::uint8_t INX(); std::uint8_t INY();	std::uint8_t JMP();
-	std::uint8_t JSR();	std::uint8_t LDA(); std::uint8_t LDX();	std::uint8_t LDY();
-	std::uint8_t LSR();	std::uint8_t NOP(); std::uint8_t ORA();	std::uint8_t PHA();
-	std::uint8_t PHP();	std::uint8_t PLA(); std::uint8_t PLP();	std::uint8_t ROL();
-	std::uint8_t ROR();	std::uint8_t RTI(); std::uint8_t RTS();	std::uint8_t SBC();
-	std::uint8_t SEC();	std::uint8_t SED(); std::uint8_t SEI();	std::uint8_t STA();
-	std::uint8_t STX();	std::uint8_t STY(); std::uint8_t TAX();	std::uint8_t TAY();
-	std::uint8_t TSX();	std::uint8_t TXA(); std::uint8_t TXS();	std::uint8_t TYA();
-
-	std::uint8_t XXX();
+	uint8_t XXX();
 
 private:
 	void clock(); 
@@ -97,22 +90,22 @@ private:
 	void irq();
 	void nmi();
 	 
-	std::uint8_t fetch();
+	uint8_t fetch();
 
-	std::uint8_t  FetchedData     =    0x00;
-	std::uint16_t TempReg         =  0x0000;
-	std::uint16_t AbsoluteAddress =  0x0000;
-	std::uint16_t RelativeAddress =    0x00;
-	std::uint8_t  OpCode          =    0x00;
-	std::uint8_t  Cycles          =       0;
+	uint8_t  FetchedData     =    0x00;
+	uint16_t temp            =  0x0000;
+	uint16_t AbsoluteAddress =  0x0000;
+	uint16_t RelativeAddress =    0x00;
+	uint8_t  OpCode          =    0x00;
+	uint8_t  cycles          =       0;
 	
 private: 
 	struct INSTRUCTION
 	{
 		std::string name;
-		std::uint8_t(proc6502::* Operation)(void) = nullptr;
-		std::uint8_t(proc6502::* AddressMode)(void) = nullptr;
-		std::uint8_t Cycles = 0;
+		uint8_t(proc6502::* Operation)() = nullptr;
+		uint8_t(proc6502::* AddressMode)() = nullptr;
+		uint8_t cycles = 0;
 	};
 
 	std::vector<INSTRUCTION> InstructionLookupTable;

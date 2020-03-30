@@ -4,7 +4,7 @@
 proc6502::proc6502()
 {
 	using p = proc6502;
-	this->InstructionLookupTable = std::vector<INSTRUCTION>
+	InstructionLookupTable =
 	{
 		{ "BRK", &p::BRK, &p::IMM, 7 }, { "ORA", &p::ORA, &p::IZX, 6 }, { "???", &p::XXX, &p::IMP, 2 }, { "???", &p::XXX, &p::IMP, 8 }, { "???", &p::NOP, &p::IMP, 3 }, { "ORA", &p::ORA, &p::ZP0, 3 }, { "ASL", &p::ASL, &p::ZP0, 5 }, { "???", &p::XXX, &p::IMP, 5 }, { "PHP", &p::PHP, &p::IMP, 3 }, { "ORA", &p::ORA, &p::IMM, 2 }, { "ASL", &p::ASL, &p::IMP, 2 }, { "???", &p::XXX, &p::IMP, 2 }, { "???", &p::NOP, &p::IMP, 4 }, { "ORA", &p::ORA, &p::ABS, 4 }, { "ASL", &p::ASL, &p::ABS, 6 }, { "???", &p::XXX, &p::IMP, 6 },
 		{ "BPL", &p::BPL, &p::REL, 2 }, { "ORA", &p::ORA, &p::IZY, 5 }, { "???", &p::XXX, &p::IMP, 2 }, { "???", &p::XXX, &p::IMP, 8 }, { "???", &p::NOP, &p::IMP, 4 }, { "ORA", &p::ORA, &p::ZPX, 4 }, { "ASL", &p::ASL, &p::ZPX, 6 }, { "???", &p::XXX, &p::IMP, 6 }, { "CLC", &p::CLC, &p::IMP, 2 }, { "ORA", &p::ORA, &p::ABY, 4 }, { "???", &p::NOP, &p::IMP, 2 }, { "???", &p::XXX, &p::IMP, 7 }, { "???", &p::NOP, &p::IMP, 4 }, { "ORA", &p::ORA, &p::ABX, 4 }, { "ASL", &p::ASL, &p::ABX, 7 }, { "???", &p::XXX, &p::IMP, 7 },
@@ -26,23 +26,22 @@ proc6502::proc6502()
 }
 
 void proc6502::ConnectBus(Bus* b)
-
 {
-	this->bus = b;
+	bus = b;
 }
 
 
-std::uint8_t proc6502::read(std::uint16_t addr)
+uint8_t proc6502::read(uint16_t addr)
 {
-	return this->bus->read(addr, false);
+	return bus->read(addr);
 }
 
-void proc6502::write(std::uint16_t addr, std::uint8_t data)
+void proc6502::write(uint16_t addr, uint8_t data)
 {
-	this->bus->write(addr, data);
+	bus->write(addr, data);
 }
 
-std::string proc6502::ToHex(std::uint32_t n, std::uint32_t d)
+std::string proc6502::hex(uint32_t n, uint32_t d)
 {
 	std::string res(d, '0');
 	for (int i = d - 1; i >= 0; i--, n >>= 4)
@@ -52,22 +51,22 @@ std::string proc6502::ToHex(std::uint32_t n, std::uint32_t d)
 	return res;
 }
 
-std::map<std::uint16_t, std::string> proc6502::disassemble(const std::uint8_t start, const std::uint8_t stop)
+std::map<uint16_t, std::string> proc6502::disassemble(const uint8_t start, const uint8_t stop)
 {
-	std::uint32_t addr = start;
-	std::uint8_t value = 0x00, lo = 0x00, hi = 0x00;
-	std::map<std::uint16_t, std::string> MapLines;
-	std::uint16_t LineAddress = 0;
+	uint32_t addr = start;
+	uint8_t value = 0x00, lo = 0x00, hi = 0x00;
+	std::map<uint16_t, std::string> MapLines;
+	uint16_t LineAddress = 0;
 
-	for (; addr <= static_cast<std::uint32_t>(stop); )
+	for (; addr <= static_cast<uint32_t>(stop);)
 	{
 		LineAddress = addr;
-		std::string StringInstruction = "$" + proc6502::ToHex(addr, 4) + ": ";
-		std::uint8_t OpCode = this->bus->read(addr, true);
+		std::string StringInstruction = "$" + proc6502::hex(addr, 4) + ": ";
+		uint8_t instruction = bus->read(addr);
 		addr++;
-		StringInstruction += this->InstructionLookupTable[OpCode].name + " ";
+		StringInstruction += InstructionLookupTable[instruction].name + " ";
 
-		auto AddrMode = this->InstructionLookupTable[OpCode].AddressMode;
+		auto AddrMode = InstructionLookupTable[instruction].AddressMode;
 
 		using p = proc6502;
 		if (AddrMode == &p::IMP)
@@ -76,82 +75,82 @@ std::map<std::uint16_t, std::string> proc6502::disassemble(const std::uint8_t st
 		}
 		else if (AddrMode == &p::IMM)
 		{
-			value = this->bus->read(addr, true);
+			value = bus->read(addr);
 			++addr;
-			StringInstruction += "#$" + proc6502::ToHex(value, 2) + "{IMM}";
+			StringInstruction += "#$" + proc6502::hex(value, 2) + "{IMM}";
 		}
 		else if (AddrMode == &p::ZP0)
 		{
-			lo = this->bus->read(addr, true);
+			lo = bus->read(addr);
 			++addr;
 			hi = 0x00;
-			StringInstruction += "$" + proc6502::ToHex(lo, 2) + " {ZP0}";
+			StringInstruction += "$" + proc6502::hex(lo, 2) + " {ZP0}";
 		}
 		else if (AddrMode == &p::ZPX)
 		{
-			lo = this->bus->read(addr, true);
+			lo = bus->read(addr);
 			++addr;
 			hi = 0x00;
 			StringInstruction += " X {ZPX}";
 		}
 		else if (AddrMode == &p::ZPY)
 		{
-			lo = this->bus->read(addr, true);
+			lo = bus->read(addr);
 			++addr;
 			hi = 0x00;
 			StringInstruction += " Y {ZPY}";
 		}
 		else if (AddrMode == &p::IZX)
 		{
-			lo = this->bus->read(addr, true);
+			lo = bus->read(addr);
 			++addr;
 			hi = 0x00;
-			StringInstruction += "($" + proc6502::ToHex(lo, 2) + ", X) {IZX}";
+			StringInstruction += "($" + proc6502::hex(lo, 2) + ", X) {IZX}";
 		}
 		else if (AddrMode == &p::IZY)
 		{
-			lo = this->bus->read(addr, true);
+			lo = bus->read(addr);
 			++addr;
 			hi = 0x00;
-			StringInstruction += "($" + proc6502::ToHex(lo, 2) + ", Y) {IZY}";
+			StringInstruction += "($" + proc6502::hex(lo, 2) + ", Y) {IZY}";
 		}
 		else if (AddrMode == &p::ABS)
 		{
-			lo = this->bus->read(addr, true);
+			lo = bus->read(addr);
 			addr++;
-			hi = this->bus->read(addr, true);
+			hi = bus->read(addr);
 			addr++;
-			StringInstruction += "$" + proc6502::ToHex((static_cast<std::uint16_t>(hi) << 8 | lo), 4) + " {ABS}";
+			StringInstruction += "$" + proc6502::hex((static_cast<uint16_t>(hi) << 8 | lo), 4) + " {ABS}";
 		}
 		else if (AddrMode == &p::ABX)
 		{
-			lo = this->bus->read(addr, true);
+			lo = bus->read(addr);
 			addr++;
-			hi = this->bus->read(addr, true);
+			hi = bus->read(addr);
 			addr++;
-			StringInstruction += "$" + proc6502::ToHex((static_cast<std::uint16_t>(hi) << 8 | lo), 4) + " X {ABX}";
+			StringInstruction += "$" + proc6502::hex((static_cast<uint16_t>(hi) << 8 | lo), 4) + " X {ABX}";
 		}
 		else if (AddrMode == &p::ABY)
 		{
-			lo = this->bus->read(addr, true);
+			lo = bus->read(addr);
 			addr++;
-			hi = this->bus->read(addr, true);
+			hi = bus->read(addr);
 			addr++;
-			StringInstruction += "$" + proc6502::ToHex((static_cast<std::uint16_t>(hi) << 8 | lo), 4) + " Y {ABY}";
+			StringInstruction += "$" + proc6502::hex((static_cast<uint16_t>(hi) << 8 | lo), 4) + " Y {ABY}";
 		}
 		else if (AddrMode == &p::IND)
 		{
-			lo = this->bus->read(addr, true);
+			lo = bus->read(addr);
 			addr++;
-			hi = this->bus->read(addr, true);
+			hi = bus->read(addr);
 			addr++;
-			StringInstruction += "($" + proc6502::ToHex((static_cast<std::uint16_t>(hi) << 8 | lo), 4) + ") {IND}";
+			StringInstruction += "($" + proc6502::hex((static_cast<uint16_t>(hi) << 8 | lo), 4) + ") {IND}";
 		}
 		else if (AddrMode == &p::REL)
 		{
-			value = bus->read(addr, true);
+			value = bus->read(addr);
 			addr++;
-			StringInstruction += "$" + proc6502::ToHex(value, 2) + " [$" + proc6502::ToHex(addr + value, 4) + "] {REL}";
+			StringInstruction += "$" + proc6502::hex(value, 2) + " [$" + proc6502::hex(addr + value, 4) + "] {REL}";
 		}
 
 		MapLines[LineAddress] = StringInstruction;
@@ -162,236 +161,228 @@ std::map<std::uint16_t, std::string> proc6502::disassemble(const std::uint8_t st
 
 void proc6502::clock()
 {
-	if (this->Cycles == 0)
+	if (cycles == 0)
 	{
 
-		this->OpCode = this->read(PCReg);
-		++PCReg;
+		OpCode = read(pc);
+		++pc;
 
-		this->SetFlag(proc6502::FLAGS6502::U, true);
+		SetFlag(FLAGS6502::U, true);
 
-		this->Cycles = this->InstructionLookupTable[this->OpCode].Cycles;
+		cycles = InstructionLookupTable[OpCode].cycles;
 		
-		auto AdditionalClockCycles1 = (this->*InstructionLookupTable[this->OpCode].AddressMode)();
-		auto AdditionalClockCycles2 = (this->*InstructionLookupTable[this->OpCode].Operation)();
+		auto AdditionalClockCycles1 = (this->*InstructionLookupTable[OpCode].AddressMode)();
+		auto AdditionalClockCycles2 = (this->*InstructionLookupTable[OpCode].Operation)();
 		
-		this->Cycles += (AdditionalClockCycles1 & AdditionalClockCycles2);
+		cycles += (AdditionalClockCycles1 & AdditionalClockCycles2);
 		
 	}
-	--this->Cycles;
+	--cycles;
 }
 
 void proc6502::reset()
 {
-	this->AbsoluteAddress = this->OriginLine;
+	AbsoluteAddress = OriginLine;
 
-	std::uint16_t lo = this->read(this->AbsoluteAddress + 0);
-	std::uint16_t hi = this->read(this->AbsoluteAddress + 1);
+	uint16_t lo = read(AbsoluteAddress + 0);
+	uint16_t hi = read(AbsoluteAddress + 1);
 
-	this->PCReg = (hi << 8) | lo;
+	pc = (hi << 8) | lo;
 
-	this->ACReg = 0;
-	this->XReg = 0;
-	this->YReg = 0;
+	AC = 0;
+	XReg = 0;
+	YReg = 0;
 
-	this->SPReg = 0xFD;
-	this->STReg = 0x00;
+	stkp = 0xFD;
+	status = 0x00;
 
-	this->SetFlag(proc6502::FLAGS6502::U, true);
+	SetFlag(FLAGS6502::U, true);
 
-	this->AbsoluteAddress = 0x0000;
-	this->RelativeAddress = 0x0000;
+	AbsoluteAddress = 0x0000;
+	RelativeAddress = 0x0000;
 
-	this->FetchedData = 0x00;
+	FetchedData = 0x00;
 
-	this->Cycles = 8;
+	cycles = 8;
 }
 
 
-// Interrupt requests only happen if the interrupt disable flag is set to false.
-// It pushed PCReg and STReg to the stack, then reads  PC from a fixed address 0xFFFE.
-// Then the program should return from the interrupt using RTI().
+// Interrupt requests only can happen if the interrupt disable flag is set to false.
+// It pushes pc and status to the stack, then reads  PC from a fixed address 0xFFFE.
+// The program should return from the interrupt using RTI.
 void proc6502::irq()
 {
-	auto InterruptMask = this->GetFlag(proc6502::FLAGS6502::I);
-	if (!InterruptMask)
-	{
+	auto InterruptMask = GetFlag(FLAGS6502::I);
+	if (!InterruptMask) 
 		return;
-	}
 
-	this->write(this->StackStart + this->SPReg, (this->PCReg >> 8) & 0x00FF);
-	--this->SPReg;
-	this->write(this->StackStart + this->SPReg, this->PCReg & 0x00FF);
-	--this->SPReg;
+	write(StackStart + stkp, (pc >> 8) & 0x00FF);
+	--stkp;
+	write(StackStart + stkp, pc & 0x00FF);
+	--stkp;
 
-	this->SetFlag(proc6502::FLAGS6502::U, true);
-	this->SetFlag(proc6502::FLAGS6502::B, false);
-	this->SetFlag(proc6502::FLAGS6502::I, true);
+	SetFlag(FLAGS6502::U, true);
+	SetFlag(FLAGS6502::B, false);
+	SetFlag(FLAGS6502::I, true);
 
-	this->write(this->StackStart + this->SPReg, this->STReg);
-	--this->SPReg;
+	write(StackStart + stkp, status);
+	--stkp;
 
-	this->AbsoluteAddress = 0xFFFE;
-	std::uint8_t lo = this->read(this->AbsoluteAddress + 0);
-	std::uint8_t hi = this->read(this->AbsoluteAddress + 1);
+	AbsoluteAddress = 0xFFFE;
+	uint8_t lo = read(AbsoluteAddress + 0);
+	uint8_t hi = read(AbsoluteAddress + 1);
 
-	this->PCReg = (hi << 8) | lo;
+	pc = (hi << 8) | lo;
 
-	this->Cycles = 7;
+	cycles = 7;
 
 }
 
-std::uint8_t proc6502::BRK()
+uint8_t proc6502::BRK()
 {
-	++this->PCReg;
+	++pc;
 
-	this->SetFlag(proc6502::FLAGS6502::I, 1);
+	SetFlag(FLAGS6502::I, 1);
 	
-	this->write(this->StackStart + this->SPReg, (this->PCReg >> 8) & 0x00FF);
-	--this->SPReg;
+	write(StackStart + stkp, (pc >> 8) & 0x00FF);
+	--stkp;
 
-	this->write(this->StackStart + this->SPReg, this->PCReg & 0x00FF);
-	--this->SPReg;
+	write(StackStart + stkp, pc & 0x00FF);
+	--stkp;
 
-	this->SetFlag(proc6502::FLAGS6502::B, 1);
+	SetFlag(FLAGS6502::B, 1);
 
-	this->write(this->StackStart + this->SPReg, this->STReg);
-	--this->SPReg;
+	write(StackStart + stkp, status);
+	--stkp;
 
-	this->SetFlag(proc6502::FLAGS6502::B, 0);
+	SetFlag(FLAGS6502::B, 0);
 
-	this->PCReg = static_cast<std::uint16_t>(this->read(0xFFFE)) | static_cast<std::uint16_t>(this->read(0xFFFE) << 8);
+	pc = static_cast<uint16_t>(read(0xFFFE)) | static_cast<uint16_t>(read(0xFFFE) << 8);
 	
 	return 0;
 }
 
-// Same as IRQ, but it takes the PCReg from the fixed address 0xFFFA.
+// Same as IRQ, but it takes the pc from the fixed address 0xFFFA.
 void proc6502::nmi()
 {
-	auto InterruptMask = this->GetFlag(proc6502::FLAGS6502::I);
+	auto InterruptMask = GetFlag(FLAGS6502::I);
 	if (!InterruptMask)
 	{
 		return;
 	}
 
-	this->write(this->StackStart + this->SPReg, (this->PCReg >> 8) & 0x00FF);
-	--this->SPReg;
-	this->write(this->StackStart + this->SPReg, this->PCReg & 0x00FF);
-	--this->SPReg;
+	write(StackStart + stkp, (pc >> 8) & 0x00FF);
+	--stkp;
+	write(StackStart + stkp, pc & 0x00FF);
+	--stkp;
 
-	this->SetFlag(proc6502::FLAGS6502::U, true);
-	this->SetFlag(proc6502::FLAGS6502::B, false);
-	this->SetFlag(proc6502::FLAGS6502::I, true);
+	SetFlag(FLAGS6502::U,  true);
+	SetFlag(FLAGS6502::B, false);
+	SetFlag(FLAGS6502::I,  true);
 
-	this->write(this->StackStart + this->SPReg, this->STReg);
-	--this->SPReg;
+	write(StackStart + stkp, status);
+	--stkp;
 
-	this->AbsoluteAddress = 0xFFFA;
-	std::uint8_t lo = this->read(this->AbsoluteAddress + 0);
-	std::uint8_t hi = this->read(this->AbsoluteAddress + 1);
+	AbsoluteAddress = 0xFFFA;
+	uint8_t lo = read(AbsoluteAddress + 0);
+	uint8_t hi = read(AbsoluteAddress + 1);
 
-	this->PCReg = (hi << 8) | lo;
+	pc = (hi << 8) | lo;
 
-	this->Cycles = 8;
+	cycles = 8;
 
 }
 
 bool proc6502::InstructionComplete()
 {
-	return this->Cycles == 8;
+	return cycles == 0;
 }
 
 
-std::uint8_t proc6502::GetFlag(proc6502::FLAGS6502 f)
+uint8_t proc6502::GetFlag(FLAGS6502 f)
 {
-	return ((this->STReg & f) > 0) ? 1 : 0;
+	return ((status & f) > 0) ? 1 : 0;
 }
 
 
-void proc6502::SetFlag(proc6502::FLAGS6502 f, bool val)
+void proc6502::SetFlag(FLAGS6502 f, bool val)
 {
-	if (val)
-	{
-		this->STReg |= f;
-	} 
-	else
-	{
-		this->STReg &= ~f;
-	}
+	if (val) status |= f;
+	else     status &= ~f;
 }
 
 // Addressing Modes
 
-std::uint8_t proc6502::IMP()
+uint8_t proc6502::IMP()
 {
-	this->FetchedData = this->ACReg;
+	FetchedData = AC;
 	return 0;
 }
 
-std::uint8_t proc6502::IMM()
+uint8_t proc6502::IMM()
 {
-	this->AbsoluteAddress = this->PCReg;
-	++this->PCReg;
+	AbsoluteAddress = pc;
+	++pc;
 	return 0;
 }
 
-std::uint8_t proc6502::ZP0()
+uint8_t proc6502::ZP0()
 {
-	this->AbsoluteAddress = this->read(PCReg);
-	++this->PCReg;
-	this->AbsoluteAddress &= 0x00FF;
+	AbsoluteAddress = read(pc);
+	++pc;
+	AbsoluteAddress &= 0x00FF;
 	return 0;
 }
 
-std::uint8_t proc6502::ZPX()
+uint8_t proc6502::ZPX()
 {
-	this->AbsoluteAddress = this->read(PCReg);
-	this->AbsoluteAddress += this->XReg;
-	++this->PCReg;
-	this->AbsoluteAddress &= 0x00FF;
+	AbsoluteAddress = read(pc);
+	AbsoluteAddress += XReg;
+	++pc;
+	AbsoluteAddress &= 0x00FF;
 	return 0;
 }
 
-std::uint8_t proc6502::ZPY()
+uint8_t proc6502::ZPY()
 {
-	this->AbsoluteAddress = this->read(PCReg);
-	this->AbsoluteAddress += this->YReg;
-	++this->PCReg;
-	this->AbsoluteAddress &= 0x00FF;
+	AbsoluteAddress = read(pc);
+	AbsoluteAddress += YReg;
+	++pc;
+	AbsoluteAddress &= 0x00FF;
 	return 0;
 }
 
-std::uint8_t proc6502::REL()
+uint8_t proc6502::REL()
 {
-	return std::uint8_t();
+	return uint8_t();
 }
 
-//Gets the address stored as two halves in the two
-//words following the instruction opcode.
-std::uint8_t proc6502::ABS()
+// Gets the address stored as two halves in the two
+// words following the instruction.
+uint8_t proc6502::ABS()
 {
-	std::uint16_t lo = this->read(PCReg);
-	++this->PCReg;
+	uint16_t lo = read(pc);
+	++pc;
 
-	std::uint16_t hi = this->read(PCReg);
-	++this->PCReg;
+	uint16_t hi = read(pc);
+	++pc;
 
-	this->AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress = (hi << 8) | lo;
 	return 0;
 }
 
-std::uint8_t proc6502::ABX()
+uint8_t proc6502::ABX()
 {
-	std::uint16_t lo = this->read(PCReg);
-	++this->PCReg;
+	uint16_t lo = read(pc);
+	++pc;
 
-	std::uint16_t hi = this->read(PCReg);
-	++this->PCReg;
+	uint16_t hi = read(pc);
+	++pc;
 
-	this->AbsoluteAddress = (hi << 8) | lo;
-	this->AbsoluteAddress += this->XReg;
+	AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress += XReg;
 
-	if ((this->AbsoluteAddress & 0xFF00) != (hi << 8))
+	if ((AbsoluteAddress & 0xFF00) != (hi << 8))
 	{
 		return 1;
 	}
@@ -401,18 +392,18 @@ std::uint8_t proc6502::ABX()
 	}
 }
 
-std::uint8_t proc6502::ABY()
+uint8_t proc6502::ABY()
 {
-	std::uint16_t lo = this->read(PCReg);
-	++this->PCReg;
+	uint16_t lo = read(pc);
+	++pc;
 
-	std::uint16_t hi = this->read(PCReg);
-	++this->PCReg;
+	uint16_t hi = read(pc);
+	++pc;
 
-	this->AbsoluteAddress = (hi << 8) | lo;
-	this->AbsoluteAddress += this->YReg;
+	AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress += YReg;
 
-	if ((this->AbsoluteAddress & 0xFF00) != (hi << 8))
+	if ((AbsoluteAddress & 0xFF00) != (hi << 8))
 	{
 		return 1;
 	}
@@ -422,23 +413,23 @@ std::uint8_t proc6502::ABY()
 	}
 }
 
-std::uint8_t proc6502::IND()
+uint8_t proc6502::IND()
 {
-	std::uint16_t PtrLo = read(this->PCReg);
-	++this->PCReg;
+	uint16_t PtrLo = read(pc);
+	++pc;
 
-	std::uint16_t PtrHi = read(this->PCReg);
-	++this->PCReg;
+	uint16_t PtrHi = read(pc);
+	++pc;
 
-	std::uint16_t ptr = ((PtrHi << 8) | PtrLo);
+	uint16_t ptr = ((PtrHi << 8) | PtrLo);
 
 	if (PtrLo == 0x00FF)
 	{
-		this->AbsoluteAddress = (read(ptr & 0xFF00) << 8) | (read(ptr + 0));
+		AbsoluteAddress = (read(ptr & 0xFF00) << 8) | (read(ptr + 0));
 	}
 	else
 	{
-		this->AbsoluteAddress = (read(ptr + 1) << 8) | (read(ptr + 0));
+		AbsoluteAddress = (read(ptr + 1) << 8) | (read(ptr + 0));
 	}
 
 	return 0;
@@ -447,19 +438,18 @@ std::uint8_t proc6502::IND()
 
 // fetches address from zero page using the address at Mem[PC].
 // then offsets it by the content of XReg.
-// if the offset makes it jump to another page, then it indicates
-// that it needs one more cycle.
-std::uint8_t proc6502::IZX()
+// if the offset makes it jump to another memory page, then it needs one more cycle.
+uint8_t proc6502::IZX()
 {
-	std::uint16_t addr = this->read(this->PCReg);
-	++this->PCReg;
+	uint16_t addr = read(pc);
+	++pc;
 
-	std::uint16_t lo = this->read(addr & 0x00FF);
-	std::uint16_t hi = this->read((addr + 1) & 0x00FF);
+	uint16_t lo = read(addr & 0x00FF);
+	uint16_t hi = read((addr + 1) & 0x00FF);
 
-	this->AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress = (hi << 8) | lo;
 
-	if ((this->AbsoluteAddress & 0xFF00) != hi << 8)
+	if ((AbsoluteAddress & 0xFF00) != hi << 8)
 	{
 		return 1;
 	}
@@ -469,20 +459,19 @@ std::uint8_t proc6502::IZX()
 
 // fetches address from zero page using the address at Mem[PC].
 // then offsets it by the content of YReg.
-// if the offset makes it jump to another page, then it indicates
-// that it needs one more cycle.
-std::uint8_t proc6502::IZY()
+// if the offset makes it jump to another page, then it needs one more cycle.
+uint8_t proc6502::IZY()
 {
-	std::uint16_t addr = this->read(this->PCReg);
-	++this->PCReg;
+	uint16_t addr = read(pc);
+	++pc;
 
-	std::uint16_t lo = this->read(addr & 0x00FF);
-	std::uint16_t hi = this->read((addr + 1) & 0x00FF);
+	uint16_t lo = read(addr & 0x00FF);
+	uint16_t hi = read((addr + 1) & 0x00FF);
 
-	this->AbsoluteAddress = (hi << 8) | lo;
-	this->AbsoluteAddress += this->YReg;
+	AbsoluteAddress = (hi << 8) | lo;
+	AbsoluteAddress += YReg;
 
-	if ((this->AbsoluteAddress & 0xFF00) != hi << 8)
+	if ((AbsoluteAddress & 0xFF00) != hi << 8)
 	{
 		return 1;
 	}
@@ -491,226 +480,222 @@ std::uint8_t proc6502::IZY()
 }
 
 // Fetches data from Memory[AbsoluteAddress] only if the current OpCode doesn't use the implied addressing mode.
-std::uint8_t proc6502::fetch()
+uint8_t proc6502::fetch()
 {
-	if (this->InstructionLookupTable[this->OpCode].AddressMode != &proc6502::IMP)
+	if (InstructionLookupTable[OpCode].AddressMode != &proc6502::IMP)
 	{
-		this->FetchedData = this->read(this->AbsoluteAddress);
+		FetchedData = read(AbsoluteAddress);
 	}
 	return 0;
 }
 
 // Add operation on AC, fetched data
 // from memory and the carry bit.
-// sets flags C, Z and N.
+// Modifies flags C, Z and N.
 // result is overflow if:
 // AC(positve) + FetchedData(positive) = negative.
 // AC(negative) + FetchedData(negative) = positive.
-// We can know whether a number is positive or negative from the MSB.
-// if the MSB of a number is 1, then it's negative.
-// Numbers of different overflow, as the absolute value 
+// The MSB of a binary 2's complement data can be 
+// interpreted as a sign bit.
+// Numbers of different signs don't overflow, as the absolute value 
 // of the result will be always less than ABS(max((ABS(AC), ABS(FD)))
 // impling that AC and FD are already fitting a 8 bit integer, then the
 // result must also fit a 8 bit integer.
+// 
+//  MSB(AC)| MSB(FD)| MSB(R) | V
+//       0 |      0 |      0 | 0
+//       0 |      0 |      1 | 1
+//       0 |      1 |      0 | 0
+//       0 |      1 |      1 | 0 
+//       1 |      0 |      0 | 0
+//       1 |      0 |      1 | 0
+//       1 |      1 |      0 | 1
+//       1 |      1 |      1 | 0
 //
-// AC | FD | R | V
-// 0  | 0  | 0 | 0
-// 0  | 0  | 1 | 1
-// 0  | 1  | 0 | 0
-// 0  | 1  | 1 | 0 
-// 1  | 0  | 0 | 0
-// 1  | 0  | 1 | 0
-// 1  | 1  | 0 | 1
-// 1  | 1  | 1 | 0
-//
-// then overflow only happens at (AC' & FD' & R) | (AC & FD & R')
-
-std::uint8_t proc6502::ADC()
+// Overflow only happens at (AC' & FD' & R) | (AC & FD & R')
+uint8_t proc6502::ADC()
 {
-	this->fetch();
+	fetch();
 
-	this->TempReg = static_cast<uint16_t>(this->FetchedData) + static_cast<uint16_t>(this->ACReg) + this->GetFlag(proc6502::FLAGS6502::C);
+	temp = static_cast<uint16_t>(FetchedData) + static_cast<uint16_t>(AC) + GetFlag(FLAGS6502::C);
 
-	this->SetFlag(proc6502::FLAGS6502::C, this->TempReg > 0x00FF);
-	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+	SetFlag(FLAGS6502::C, temp > 0x00FF);
+	SetFlag(FLAGS6502::Z, temp == 0x0000);
+	SetFlag(FLAGS6502::N, temp & 0x0080);
 
-	bool ResMSB = this->TempReg & 0x0080;
-	bool FetchedMSB = this->FetchedData & 0x0080;
-	bool AcMSB = this->ACReg & 0x0080;
+	bool ResMSB = temp & 0x0080;
+	bool FetchedMSB = FetchedData & 0x0080;
+	bool AcMSB = AC & 0x0080;
 
-	//this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ AcMSB) & ~(FetchedMSB ^ AcMSB));
-	this->SetFlag(proc6502::FLAGS6502::V, (AcMSB & FetchedMSB & !ResMSB) | (!AcMSB & !FetchedMSB & ResMSB));
-	this->ACReg = this->TempReg & 0x00FF;
+	SetFlag(FLAGS6502::V, (AcMSB & FetchedMSB & !ResMSB) | (!AcMSB & !FetchedMSB & ResMSB));
+	AC = temp & 0x00FF;
 
 	return 1;
 }
 
-// Logic And the content of ACreg with content
-// fetched from memory.
-std::uint8_t proc6502::AND()
+uint8_t proc6502::AND()
 {
-	this->fetch();
-	this->ACReg = this->ACReg & this->FetchedData;
+	fetch();
+	AC = AC & FetchedData;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg &  0x80);
+	SetFlag(FLAGS6502::Z, AC == 0x00);
+	SetFlag(FLAGS6502::N, AC &  0x80);
 
 	return 0;
 }
 
 // Arithmetic shift left. 
-// Sets flags C, N and Z.
+// Modifies flags C, N and Z.
 // Can use implied addressing mode.
 // Then setting the result in the AC register.
-std::uint8_t proc6502::ASL()
+uint8_t proc6502::ASL()
 {
-	this->fetch();
-	this->TempReg = static_cast<std::uint16_t>(this->FetchedData) << 1;
+	fetch();
+	temp = static_cast<uint16_t>(FetchedData) << 1;
 
-	this->SetFlag(proc6502::FLAGS6502::C, (this->TempReg & 0xFF00) > 0);
-	this->SetFlag(proc6502::FLAGS6502::N, (this->TempReg & 0x80));
-	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
+	SetFlag(FLAGS6502::C, (temp & 0xFF00) > 0);
+	SetFlag(FLAGS6502::N, (temp & 0x80));
+	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
 
-	if (this->InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
+	if (InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
 	{
-		this->ACReg = static_cast<std::uint8_t>(this->TempReg) & 0xFF;
+		AC = static_cast<uint8_t>(temp) & 0xFF;
 	}
 	else
 	{
-		this->write(this->AbsoluteAddress, static_cast<uint8_t>(this->TempReg));
+		write(AbsoluteAddress, static_cast<uint8_t>(temp));
 	}
 	return 0;
 }
 
 // Branch on carry clear.
-std::uint8_t proc6502::BCC()
+uint8_t proc6502::BCC()
 {
-	if (this->GetFlag(proc6502::FLAGS6502::C) == 0)
+	if (GetFlag(FLAGS6502::C) == 0)
 	{
-		++this->Cycles;
-		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
+		++cycles;
+		AbsoluteAddress = pc + RelativeAddress;
 
-		if ((this->AbsoluteAddress & (0xFF00)) != (this->PCReg & (0xFF00)))
+		if ((AbsoluteAddress & (0xFF00)) != (pc & (0xFF00)))
 		{
-			++this->Cycles;
+			++cycles;
 		}
-		this->PCReg = this->AbsoluteAddress;
+		pc = AbsoluteAddress;
 	}
 	return 0;
 }
 
 // Branch on carry set.
-std::uint8_t proc6502::BCS()
+uint8_t proc6502::BCS()
 {
-	if (this->GetFlag(proc6502::FLAGS6502::C) == 1)
+	if (GetFlag(FLAGS6502::C) == 1)
 	{
-		++this->Cycles;
-		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
+		++cycles;
+		AbsoluteAddress = pc + RelativeAddress;
 
-		if ((this->AbsoluteAddress & (0xFF00)) != (this->PCReg & (0xFF00)))
+		if ((AbsoluteAddress & (0xFF00)) != (pc & (0xFF00)))
 		{
-			++this->Cycles;
+			++cycles;
 		}
-		this->PCReg = this->AbsoluteAddress;
+		pc = AbsoluteAddress;
 	}
 	return 0;
 }
 
 // Branch if the last operation implied equality.
-std::uint8_t proc6502::BEQ()
+uint8_t proc6502::BEQ()
 {
-	if (this->GetFlag(proc6502::FLAGS6502::Z) == 1)
+	if (GetFlag(FLAGS6502::Z) == 1)
 	{
-		++this->Cycles;
-		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
+		++cycles;
+		AbsoluteAddress = pc + RelativeAddress;
 
-		if ((this->AbsoluteAddress & (0xFF00)) != (this->PCReg & (0xFF00)))
+		if ((AbsoluteAddress & (0xFF00)) != (pc & (0xFF00)))
 		{
-			++this->Cycles;
+			++cycles;
 		}
-		this->PCReg = this->AbsoluteAddress;
+		pc = AbsoluteAddress;
 	}
 	return 0;
 
 }
 
 // Branch if the last operation didn't imply equality.
-std::uint8_t proc6502::BNE()
+uint8_t proc6502::BNE()
 {
-	if (this->GetFlag(proc6502::FLAGS6502::Z) == 0)
+	if (GetFlag(FLAGS6502::Z) == 0)
 	{
-		++this->Cycles;
-		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
+		++cycles;
+		AbsoluteAddress = pc + RelativeAddress;
 
-		if ((this->AbsoluteAddress & 0xFF00) != (this->PCReg & 0xFF00))
-			++this->Cycles;
+		if ((AbsoluteAddress & 0xFF00) != (pc & 0xFF00))
+			++cycles;
 
-		this->PCReg = this->AbsoluteAddress;
+		pc = AbsoluteAddress;
 	}
 	return 0;
 }
 
 // Branch on result is positive.
-std::uint8_t proc6502::BPL()
+uint8_t proc6502::BPL()
 {
-	if (this->GetFlag(proc6502::FLAGS6502::N) == 0)
+	if (GetFlag(FLAGS6502::N) == 0)
 	{
-		++this->Cycles;
-		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
+		++cycles;
+		AbsoluteAddress = pc + RelativeAddress;
 
-		if ((this->AbsoluteAddress & 0xFF00) != (this->PCReg & 0xFF00))
-			++this->Cycles;
+		if ((AbsoluteAddress & 0xFF00) != (pc & 0xFF00))
+			++cycles;
 
-		this->PCReg = this->AbsoluteAddress;
+		pc = AbsoluteAddress;
 	}
 	return 0;
 }
 
 // Branch on result hasn't overflown.
-std::uint8_t proc6502::BVC()
+uint8_t proc6502::BVC()
 {
-	if (this->GetFlag(proc6502::FLAGS6502::V) == 0)
+	if (GetFlag(FLAGS6502::V) == 0)
 	{
-		++this->Cycles;
-		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
+		++cycles;
+		AbsoluteAddress = pc + RelativeAddress;
 
-		if ((this->AbsoluteAddress & 0xFF00) != (this->PCReg & 0xFF00))
-			++this->Cycles;
+		if ((AbsoluteAddress & 0xFF00) != (pc & 0xFF00))
+			++cycles;
 
-		this->PCReg = this->AbsoluteAddress;
+		pc = AbsoluteAddress;
 	}
 	return 0;
 }
 
 // Branch on result overflown.
-std::uint8_t proc6502::BVS()
+uint8_t proc6502::BVS()
 {
-	if (this->GetFlag(proc6502::FLAGS6502::V) == 1)
+	if (GetFlag(FLAGS6502::V) == 1)
 	{
-		++this->Cycles;
-		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
+		++cycles;
+		AbsoluteAddress = pc + RelativeAddress;
 
-		if ((this->AbsoluteAddress & 0xFF00) != (this->PCReg & 0xFF00))
-			++this->Cycles;
+		if ((AbsoluteAddress & 0xFF00) != (pc & 0xFF00))
+			++cycles;
 
-		this->PCReg = this->AbsoluteAddress;
+		pc = AbsoluteAddress;
 	}
 	return 0;
 }
 
 // Branch on result minus.
-std::uint8_t proc6502::BMI()
+uint8_t proc6502::BMI()
 {
-	if (this->GetFlag(proc6502::FLAGS6502::N) == 1)
+	if (GetFlag(FLAGS6502::N) == 1)
 	{
-		++this->Cycles;
-		this->AbsoluteAddress = this->PCReg + this->RelativeAddress;
+		++cycles;
+		AbsoluteAddress = pc + RelativeAddress;
 
-		if ((this->AbsoluteAddress & 0xFF00) != (this->PCReg & 0xFF00))
-			++this->Cycles;
+		if ((AbsoluteAddress & 0xFF00) != (pc & 0xFF00))
+			++cycles;
 
-		this->PCReg = this->AbsoluteAddress;
+		pc = AbsoluteAddress;
 	}
 	return 0;
 }
@@ -719,79 +704,79 @@ std::uint8_t proc6502::BMI()
 // bits 7 and 6 of operand are transfered 
 // to bit 7 and 6 of SR(N, V); 
 // the zeroflag is set to the result of operand AND accumulator.
-std::uint8_t proc6502::BIT()
+uint8_t proc6502::BIT()
 {
-	std::uint16_t AndedValue = this->ACReg & this->FetchedData;
+	uint16_t AndedValue = AC & FetchedData;
 
-	this->SetFlag(proc6502::FLAGS6502::N, this->FetchedData & (1 << 7));
-	this->SetFlag(proc6502::FLAGS6502::V, this->FetchedData & (1 << 6));
-	this->SetFlag(proc6502::FLAGS6502::Z, (AndedValue & 0x0000) == 0);
+	SetFlag(FLAGS6502::N, FetchedData & (1 << 7));
+	SetFlag(FLAGS6502::V, FetchedData & (1 << 6));
+	SetFlag(FLAGS6502::Z, (AndedValue & 0x0000) == 0);
 
 	return 0;
 }
 
 // Clears the carry flag.
-std::uint8_t proc6502::CLC()
+uint8_t proc6502::CLC()
 {
-	this->SetFlag(proc6502::FLAGS6502::C, false);
+	SetFlag(FLAGS6502::C, false);
 	return 0;
 }
 
 // Clears the interrupt flag.
-std::uint8_t proc6502::CLI()
+uint8_t proc6502::CLI()
 {
-	this->SetFlag(proc6502::FLAGS6502::I, false);
+	SetFlag(FLAGS6502::I, false);
 	return 0;
 }
 
 // Clears the deicmal flag.
-std::uint8_t proc6502::CLD()
+uint8_t proc6502::CLD()
 {
-	this->SetFlag(proc6502::FLAGS6502::D, false);
+	SetFlag(FLAGS6502::D, false);
 	return 0;
 }
 
 // Clears the overflow flag.
-std::uint8_t proc6502::CLV()
+uint8_t proc6502::CLV()
 {
-	this->SetFlag(proc6502::FLAGS6502::V, false);
+	SetFlag(FLAGS6502::V, false);
 	return 0;
 }
 
 // Compare AC register with fetched data and set flags accordingly.
-std::uint8_t proc6502::CMP()
+uint8_t proc6502::CMP()
 {
-	this->fetch();
-	this->TempReg = static_cast<std::uint16_t>(this->ACReg) - static_cast<std::uint16_t>(this->FetchedData);
+	fetch();
+	temp = static_cast<uint16_t>(AC) - static_cast<uint16_t>(FetchedData);
 	
-	this->SetFlag(proc6502::FLAGS6502::C, this->ACReg >= this->FetchedData);
-	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+	SetFlag(FLAGS6502::C, AC >= FetchedData);
+	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
+	SetFlag(FLAGS6502::N, temp & 0x0080);
 
 	return 0;
 }
 // Compare X register with fetched data and set flags accordingly.
-std::uint8_t proc6502::CPX()
+uint8_t proc6502::CPX()
 {
-	this->fetch();
-	this->TempReg = static_cast<std::uint16_t>(this->ACReg) - static_cast<std::uint16_t>(this->XReg);
+	fetch();
+	temp = static_cast<uint16_t>(AC) - static_cast<uint16_t>(XReg);
 
-	this->SetFlag(proc6502::FLAGS6502::C, this->YReg >= this->FetchedData);
-	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+	SetFlag(FLAGS6502::C, YReg >= FetchedData);
+	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
+	SetFlag(FLAGS6502::N, temp & 0x0080);
 
 	return 0;
 }
 
 // Compare Y register with fetched data and set flags accordingly.
-std::uint8_t proc6502::CPY()
+uint8_t proc6502::CPY()
 {
-	this->fetch();
-	this->TempReg = static_cast<std::uint16_t>(this->YReg) - static_cast<std::uint16_t>(this->YReg);
+	fetch();
+	temp = static_cast<uint16_t>(YReg) - static_cast<uint16_t>(YReg);
 
-	this->SetFlag(proc6502::FLAGS6502::C, this->YReg >= this->FetchedData);
-	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+	SetFlag(FLAGS6502::C, YReg >= FetchedData);
+	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
+	SetFlag(FLAGS6502::N, temp & 0x0080);
 
 	return 0;
 }
@@ -799,198 +784,192 @@ std::uint8_t proc6502::CPY()
 
 // Decrement at memory address.
 // M[AbsoluteAddress] -= 1.
-// Sets flags Z and N.
-std::uint8_t proc6502::DEC()
+// Modifies flags Z and N.
+uint8_t proc6502::DEC()
 {
-	this->fetch();
+	fetch();
 	
-	this->TempReg = static_cast<std::uint16_t>(this->FetchedData) - 1;
+	temp = static_cast<uint16_t>(FetchedData) - 1;
 
-	this->write(this->AbsoluteAddress, this->TempReg & 0x00FF);
+	write(AbsoluteAddress, temp & 0x00FF);
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+	SetFlag(FLAGS6502::Z, temp == 0x0000);
+	SetFlag(FLAGS6502::N, temp & 0x0080);
 
 	return 0;
 }
 
 
 // Decrement XReg.
-// XReg = XReg - 1.
-// Sets flags Z and N.
-std::uint8_t proc6502::DEX()
+// Modifies flags Z and N.
+uint8_t proc6502::DEX()
 {
-	--this->XReg;
+	--XReg;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->XReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->XReg & 0x0080);
+	SetFlag(FLAGS6502::Z, XReg == 0x0000);
+	SetFlag(FLAGS6502::N, XReg & 0x0080);
 
 	return 0;
 }
 
 
 // Decrement YReg.
-// YReg = YReg - 1.
-// Sets flags Z and N.
-std::uint8_t proc6502::DEY()
+// Modifies flags Z and N.
+uint8_t proc6502::DEY()
 {
-	--this->XReg;
+	--XReg;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->YReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->YReg & 0x0080);
+	SetFlag(FLAGS6502::Z, YReg == 0x0000);
+	SetFlag(FLAGS6502::N, YReg & 0x0080);
 
 	return 0;
 }
 
 
 // XOR AC register with the fetched data.
-// AC = AC ^ FetchedData.
-// Sets flags Z and N.
-std::uint8_t proc6502::EOR()
+// Modifies flags Z and N.
+uint8_t proc6502::EOR()
 {
-	this->fetch();
+	fetch();
 
-	this->ACReg = this->ACReg ^ this->FetchedData;
+	AC = AC ^ FetchedData;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg  & 0x0080);
+	SetFlag(FLAGS6502::Z, AC == 0x0000);
+	SetFlag(FLAGS6502::N, AC  & 0x0080);
 
 	return 0;
 }
 
 // Increments value at memory.
-// M[AbsoluteValue]++
-// Sets flags N and Z.
-std::uint8_t proc6502::INC()
+// Modifies flags N and Z.
+uint8_t proc6502::INC()
 {
-	this->fetch();
+	fetch();
 
-	this->TempReg = static_cast<std::uint16_t>(this->FetchedData) + 1;
+	temp = static_cast<uint16_t>(FetchedData) + 1;
 
-	this->write(this->AbsoluteAddress, this->TempReg & 0x00FF);
+	write(AbsoluteAddress, temp & 0x00FF);
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+	SetFlag(FLAGS6502::Z, temp == 0x0000);
+	SetFlag(FLAGS6502::N, temp & 0x0080);
 
 	return 0;
 
 }
 
 // Increments value at XReg.
-// XReg = XReg + 1
-// Sets flags N and Z.
-std::uint8_t proc6502::INX()
+// Modifies flags N and Z.
+uint8_t proc6502::INX()
 {
-	this->XReg = (this->XReg) + 1;
+	XReg = (XReg) + 1;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->XReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->XReg  & 0x0080);
+	SetFlag(FLAGS6502::Z, XReg == 0x0000);
+	SetFlag(FLAGS6502::N, XReg  & 0x0080);
 
 	return 0;
 }
 
 
 // Increments value at YReg.
-// YReg = YReg + 1
-// Sets flags N and Z.
-std::uint8_t proc6502::INY()
+// Modifies flags N and Z.
+uint8_t proc6502::INY()
 {
-	this->YReg = (this->YReg) + 1;
+	YReg = (YReg) + 1;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->YReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->YReg  & 0x0080);
+	SetFlag(FLAGS6502::Z, YReg == 0x0000);
+	SetFlag(FLAGS6502::N, YReg  & 0x0080);
 
 	return 0;
 }
 
 // Jump unconditionally to address stored.
-std::uint8_t proc6502::JMP()
+uint8_t proc6502::JMP()
 {
-	this->PCReg = this->AbsoluteAddress;
+	pc = AbsoluteAddress;
 	return 0;
 }
 
 // Jump to sub routine address.
 // Saves PC on the stack as two 8-bit halves.
-std::uint8_t proc6502::JSR()
+uint8_t proc6502::JSR()
 {
-	--this->PCReg;
+	--pc;
 	
-	this->write(this->StackStart + this->SPReg, (this->PCReg >> 8) & 0x00FF);
-	--this->SPReg;
+	write(StackStart + stkp, (pc >> 8) & 0x00FF);
+	--stkp;
 
-	this->write(this->StackStart + this->SPReg, (this->PCReg & 0x00FF));
-	--this->SPReg;
+	write(StackStart + stkp, (pc & 0x00FF));
+	--stkp;
 
-	this->PCReg = this->AbsoluteAddress;
+	pc = AbsoluteAddress;
 
 	return 0;
 }
 
-// Load data to the ACReg.
-// Sets flags Z and N.
-std::uint8_t proc6502::LDA()
+// Load data to the AC.
+// Modifies flags Z and N.
+uint8_t proc6502::LDA()
 {
-	this->fetch();
+	fetch();
 
-	this->ACReg = this->FetchedData;
+	AC = FetchedData;
 	
-	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+	SetFlag(FLAGS6502::Z, AC == 0x00);
+	SetFlag(FLAGS6502::N, AC & 0x80);
 
 	return 0;
 }
 
 // Load data to the XReg.
-// Sets flags Z and N.
-std::uint8_t proc6502::LDX()
+// Modifies flags Z and N.
+uint8_t proc6502::LDX()
 {
-	this->fetch();
+	fetch();
 
-	this->XReg = this->FetchedData;
+	XReg = FetchedData;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->XReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->XReg & 0x80);
+	SetFlag(FLAGS6502::Z, XReg == 0x00);
+	SetFlag(FLAGS6502::N, XReg & 0x80);
 
 	return 0;
 }
 
 // Loads data to the YReg.
-// Sets flags Z, N.
-std::uint8_t proc6502::LDY()
+// Modifies flags Z, N.
+uint8_t proc6502::LDY()
 {
-	this->fetch();
+	fetch();
 
-	this->YReg = this->FetchedData;
+	YReg = FetchedData;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->YReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->YReg & 0x80);
+	SetFlag(FLAGS6502::Z, YReg == 0x00);
+	SetFlag(FLAGS6502::N, YReg & 0x80);
 
 	return 0;
 }
 
 // Logical shift right.
-// Sets flags C, Z, and N.
+// Modifies flags C, Z, and N.
 // it can be used with implied addressing mode
-// it then will store the result in ACReg.
-std::uint8_t proc6502::LSR()
+// it then will store the result in AC.
+uint8_t proc6502::LSR()
 {
-	this->fetch();
+	fetch();
 	
-	this->SetFlag(proc6502::FLAGS6502::C, this->FetchedData & 0x0001);
+	SetFlag(FLAGS6502::C, FetchedData & 0x0001);
 	
-	this->TempReg = this->FetchedData >> 1;
+	temp = FetchedData >> 1;
 	
-	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg == 0x0080);
+	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0x0000);
+	SetFlag(FLAGS6502::N, temp == 0x0080);
 	
-	if (this->InstructionLookupTable[this->OpCode].AddressMode == &proc6502::IMP)
+	if (InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
 	{
-		this->ACReg = static_cast<std::uint8_t>(this->TempReg & 0x00FF);
+		AC = static_cast<uint8_t>(temp & 0x00FF);
 	}
 	else
 	{
-		this->write(this->AbsoluteAddress, static_cast<std::uint8_t>(this->TempReg & 0x00FF));
+		write(AbsoluteAddress, static_cast<uint8_t>(temp & 0x00FF));
 	}
 	
 	return 0;
@@ -998,302 +977,302 @@ std::uint8_t proc6502::LSR()
 
 
 // OR fetched data from Memory with Accumulator
-// ACReg |= FetchedData.
-// Sets flags N and Z.
-std::uint8_t proc6502::ORA()
+// Modifies flags N and Z.
+uint8_t proc6502::ORA()
 {
-	this->fetch();
+	fetch();
 	
-	this->ACReg = this->ACReg | this->FetchedData;
+	AC = AC | FetchedData;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+	SetFlag(FLAGS6502::Z, AC == 0x00);
+	SetFlag(FLAGS6502::N, AC & 0x80);
 
 	return 1;
 }
 
-std::uint8_t proc6502::NOP()
+uint8_t proc6502::NOP()
 {
 	return 0;
 }
 
 // Pushes accumulator to the stack.
-std::uint8_t proc6502::PHA()
+uint8_t proc6502::PHA()
 {
-	this->write(this->StackStart + this->SPReg, this->ACReg);
-	--this->SPReg;
+	write(StackStart + stkp, AC);
+	--stkp;
 
 	return 0;
 }
 
 // Pushes status register to the stack.
 // Break flag is set before pushing.
-std::uint8_t proc6502::PHP()
+uint8_t proc6502::PHP()
 {
-	this->STReg |= proc6502::FLAGS6502::B;
-	this->STReg |= proc6502::FLAGS6502::U;
+	status |= FLAGS6502::B;
+	status |= FLAGS6502::U;
 
-	this->write(this->StackStart + this->SPReg, this->STReg);
+	write(StackStart + stkp, status);
 
-	this->SetFlag(proc6502::FLAGS6502::B, false);
-	this->SetFlag(proc6502::FLAGS6502::U, false);
+	SetFlag(FLAGS6502::B, false);
+	SetFlag(FLAGS6502::U, false);
 
-	--this->SPReg;
+	--stkp;
 
 	return 0;
 }
 
 
 // Pop accumulator from the stack and set flags.
-std::uint8_t proc6502::PLA()
+// Modifies N and Z
+uint8_t proc6502::PLA()
 {
-	++this->SPReg;
+	++stkp;
 	
-	this->ACReg = this->read(this->StackStart + this->SPReg);
+	AC = read(StackStart + stkp);
 	
-	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+	SetFlag(FLAGS6502::Z, AC == 0x00);
+	SetFlag(FLAGS6502::N, AC & 0x80);
 
 	return 0;
 }
 
 
 // Pop status register from the stack.
-std::uint8_t proc6502::PLP()
+uint8_t proc6502::PLP()
 {
-	++this->SPReg;
+	++stkp;
 
-	this->STReg = this->read(this->StackStart + this->SPReg);
+	status = read(StackStart + stkp);
 	
-	this->SetFlag(proc6502::FLAGS6502::U, true);
+	SetFlag(FLAGS6502::U, true);
 
 	return 0;
 }
 
 // Rotates one bit to the left with carry flag.
 // Sets N, C and Z flags.
-std::uint8_t proc6502::ROL()
+uint8_t proc6502::ROL()
 {
-	this->fetch();
+	fetch();
 	
-	this->TempReg = (this->FetchedData << 1) | this->GetFlag(proc6502::FLAGS6502::C);
+	temp = (FetchedData << 1) | GetFlag(FLAGS6502::C);
 
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
-	this->SetFlag(proc6502::FLAGS6502::C, this->TempReg & 0xFF00);
-	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
+	SetFlag(FLAGS6502::N, temp & 0x0080);
+	SetFlag(FLAGS6502::C, temp & 0xFF00);
+	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
 
-	if (this->InstructionLookupTable[this->OpCode].AddressMode == &proc6502::IMP)
+	if (InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
 	{
-		this->ACReg = static_cast<std::uint8_t>(this->TempReg & 0x00FF);
+		AC = static_cast<uint8_t>(temp & 0x00FF);
 	}
 	else
 	{
-		this->write(this->AbsoluteAddress, static_cast<std::uint8_t>(this->TempReg & 0x00FF));
+		write(AbsoluteAddress, static_cast<uint8_t>(temp & 0x00FF));
 	}
 	return 0;
 }
 
 // Rotates one bit to the right with carry flag.
 // Sets N, C and Z flags.
-std::uint8_t proc6502::ROR()
+uint8_t proc6502::ROR()
 {
-	this->fetch();
+	fetch();
 
-	this->TempReg = (this->FetchedData >> 1) | (static_cast<std::uint16_t>(this->GetFlag(proc6502::FLAGS6502::C )) << 7);
+	temp = (FetchedData >> 1) | (static_cast<uint16_t>(GetFlag(FLAGS6502::C )) << 7);
 
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
-	this->SetFlag(proc6502::FLAGS6502::C, this->FetchedData & 0x01);
-	this->SetFlag(proc6502::FLAGS6502::Z, (this->TempReg & 0x00FF) == 0);
+	SetFlag(FLAGS6502::N, temp & 0x0080);
+	SetFlag(FLAGS6502::C, FetchedData & 0x01);
+	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
 
-	if (this->InstructionLookupTable[this->OpCode].AddressMode == &proc6502::IMP)
+	if (InstructionLookupTable[OpCode].AddressMode == &proc6502::IMP)
 	{
-		this->ACReg = static_cast<std::uint8_t>(this->TempReg & 0x00FF);
+		AC = static_cast<uint8_t>(temp & 0x00FF);
 	}
 	else
 	{
-		this->write(this->AbsoluteAddress, static_cast<std::uint8_t>(this->TempReg & 0x00FF));
+		write(AbsoluteAddress, static_cast<uint8_t>(temp & 0x00FF));
 	}
 	return 0;
 }
 
 // Return from inturrupt.
 // Pops Status flags off the stack.
-std::uint8_t proc6502::RTI()
+uint8_t proc6502::RTI()
 {
-	++this->SPReg;
-	this->STReg = this->read(this->StackStart + this->SPReg);
+	++stkp;
+	status = read(StackStart + stkp);
 
-	this->SetFlag(proc6502::FLAGS6502::B, false);
-	this->SetFlag(proc6502::FLAGS6502::U, false);
+	SetFlag(FLAGS6502::B, false);
+	SetFlag(FLAGS6502::U, false);
 
-	++this->SPReg;
-	this->PCReg = this->read(this->StackStart + this->SPReg);
+	++stkp;
+	pc = read(StackStart + stkp);
 
-	++this->SPReg;
-	this->PCReg |= (this->read(this->StackStart + this->SPReg) << 8);
+	++stkp;
+	pc |= (read(StackStart + stkp) << 8);
 
 	return 0;
 }
 
 // Return from subroutine.
 // Pops the previous PC from the stack.
-std::uint8_t proc6502::RTS()
+uint8_t proc6502::RTS()
 {
-	++this->SPReg;
-	this->PCReg = this->read(this->StackStart + this->SPReg);
+	++stkp;
+	pc = read(StackStart + stkp);
 
-	++this->SPReg;
-	this->PCReg |= (this->read(this->StackStart + this->SPReg) << 8);
+	++stkp;
+	pc |= (read(StackStart + stkp) << 8);
 
-	++this->PCReg;
+	++pc;
 
 	return 0;
 }
 
 // Subtracts Fetched data from the AC register.
-std::uint8_t proc6502::SBC()
+uint8_t proc6502::SBC()
 {
-	this->fetch();
+	fetch();
 
-	std::uint16_t InvertedValue = this->FetchedData ^ 0x00FF;
+	uint16_t InvertedValue = FetchedData ^ 0x00FF;
 
-	this->TempReg = InvertedValue + static_cast<uint16_t>(this->ACReg) + this->GetFlag(proc6502::FLAGS6502::C);
+	temp = InvertedValue + static_cast<uint16_t>(AC) + GetFlag(FLAGS6502::C);
 
-	this->SetFlag(proc6502::FLAGS6502::C, this->TempReg > 0x00FF);
-	this->SetFlag(proc6502::FLAGS6502::Z, this->TempReg == 0x0000);
-	this->SetFlag(proc6502::FLAGS6502::N, this->TempReg & 0x0080);
+	SetFlag(FLAGS6502::C, temp > 0x00FF);
+	SetFlag(FLAGS6502::Z, temp == 0x0000);
+	SetFlag(FLAGS6502::N, temp & 0x0080);
 
-	bool ResMSB = this->TempReg & 0x0080;
-	bool FetchedMSB = this->FetchedData & 0x0080;
-	bool AcMSB = this->ACReg & 0x0080;
+	bool ResMSB = temp & 0x0080;
+	bool FetchedMSB = FetchedData & 0x0080;
+	bool AcMSB = AC & 0x0080;
 
-	this->SetFlag(proc6502::FLAGS6502::V, (ResMSB ^ AcMSB) & ~(FetchedMSB ^ AcMSB));
+	SetFlag(FLAGS6502::V, (ResMSB ^ AcMSB) & ~(FetchedMSB ^ AcMSB));
 
-	this->ACReg = this->TempReg & 0x00FF;
+	AC = temp & 0x00FF;
 
 	return 1;
 }
 
 // Sets Carry flag.
-std::uint8_t proc6502::SEC()
+uint8_t proc6502::SEC()
 {
-	this->SetFlag(proc6502::FLAGS6502::C, true);
+	SetFlag(FLAGS6502::C, true);
 
 	return 0;
 }
 
 // Sets Decimal flag.
-std::uint8_t proc6502::SED()
+uint8_t proc6502::SED()
 {
-	this->SetFlag(proc6502::FLAGS6502::D, true);
+	SetFlag(FLAGS6502::D, true);
 
 	return 0;
 }
 
 // Sets inturrupt flag.
-std::uint8_t proc6502::SEI()
+uint8_t proc6502::SEI()
 {
-	this->SetFlag(proc6502::FLAGS6502::I, true);
+	SetFlag(FLAGS6502::I, true);
 
 	return 0;
 }
 
 // Stores AC register in Memory[AbsoluteAddress].
-std::uint8_t proc6502::STA()
+uint8_t proc6502::STA()
 {
-	this->write(this->AbsoluteAddress, this->ACReg);
+	write(AbsoluteAddress, AC);
 
 	return 0;
 }
 
 // Stores X register in Memory[AbsoluteAddress].
-std::uint8_t proc6502::STX()
+uint8_t proc6502::STX()
 {
-	this->write(this->AbsoluteAddress, this->XReg);
+	write(AbsoluteAddress, XReg);
 
 	return 0;
 }
 
 // Stores Y register in Memory[AbsoluteAddress].
-std::uint8_t proc6502::STY()
+uint8_t proc6502::STY()
 {
-	this->write(this->AbsoluteAddress, this->YReg);
+	write(AbsoluteAddress, YReg);
 
 	return 0;
 }
 
 // Puts AC register into X register
-// Sets flags Z and N.
-std::uint8_t proc6502::TAX()
+// Modifies flags Z and N.
+uint8_t proc6502::TAX()
 {
-	this->XReg = this->ACReg;
+	XReg = AC;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+	SetFlag(FLAGS6502::Z, AC == 0x00);
+	SetFlag(FLAGS6502::N, AC & 0x80);
 
 	return 0;
 }
 
 // Puts AC register into Y register
-// Sets flags Z and N.
-std::uint8_t proc6502::TAY()
+// Modifies flags Z and N.
+uint8_t proc6502::TAY()
 {
-	this->YReg = this->ACReg;
+	YReg = AC;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+	SetFlag(FLAGS6502::Z, AC == 0x00);
+	SetFlag(FLAGS6502::N, AC & 0x80);
 
 	return 0;
 }
 
 
 // Puts Stack Pointer register into X register
-// Sets flags Z and N.
-std::uint8_t proc6502::TSX()
+// Modifies flags Z and N.
+uint8_t proc6502::TSX()
 {
-	this->XReg = this->SPReg;
+	XReg = stkp;
 	
-	this->SetFlag(proc6502::FLAGS6502::N, this->SPReg & 0x80);
-	this->SetFlag(proc6502::FLAGS6502::Z, this->SPReg == 0x00);
+	SetFlag(FLAGS6502::N, stkp & 0x80);
+	SetFlag(FLAGS6502::Z, stkp == 0x00);
 
 	return 0;
 }
 
 // Puts X register into the AC register
-// Sets flags Z and N.
-std::uint8_t proc6502::TXA()
+// Modifies flags Z and N.
+uint8_t proc6502::TXA()
 {
-	this->ACReg = this->XReg;
+	AC = XReg;
 	
-	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+	SetFlag(FLAGS6502::Z, AC == 0x00);
+	SetFlag(FLAGS6502::N, AC & 0x80);
 	
 	return 0;
 }
 
 // Puts X register into the Stack pointer register
-std::uint8_t proc6502::TXS()
+uint8_t proc6502::TXS()
 {
-	this->SPReg = this->XReg;
+	stkp = XReg;
 
 	return 0;
 }
 
 // Puts Y register into the AC register
-// Sets flags Z and N.
-std::uint8_t proc6502::TYA()
+// Modifies flags Z and N.
+uint8_t proc6502::TYA()
 {
-	this->ACReg = this->YReg;
+	AC = YReg;
 
-	this->SetFlag(proc6502::FLAGS6502::Z, this->ACReg == 0x00);
-	this->SetFlag(proc6502::FLAGS6502::N, this->ACReg & 0x80);
+	SetFlag(FLAGS6502::Z, AC == 0x00);
+	SetFlag(FLAGS6502::N, AC & 0x80);
 
 	return 0;
 }
 
 // catches all the wrong opcodes.
 // TODO: syntax errors handling.
-std::uint8_t proc6502::XXX()
+uint8_t proc6502::XXX()
 {
-	return std::uint8_t(0);
+	return 0;
 }

@@ -1,4 +1,8 @@
 /.vs
 /Debug
+/x64
 /proc6502/Debug
 /proc6502/x64
+/proc6502/proc6502.vcxproj
+/proc6502/proc6502.vcxproj.filters
+/proc6502/proc6502.vcxproj.user

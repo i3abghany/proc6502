@@ -2,13 +2,13 @@
 
 Bus::Bus()
 {
-	this->ram = std::array<std::uint8_t, 64 * 1024>();
+	this->ram = std::array<uint8_t, 64 * 1024>();
 	this->ram.fill(0x00);
 	
 	cpu.ConnectBus(this);
 }
 
-std::uint8_t Bus::read(std::uint16_t addr, bool readOnly)
+std::uint8_t Bus::read(uint16_t addr)
 {
 	if (addr <= 0x0000 || addr >= 0xFFFF)
 	{
@@ -17,7 +17,7 @@ std::uint8_t Bus::read(std::uint16_t addr, bool readOnly)
 	return this->ram[addr];
 }
 
-void Bus::write(std::uint16_t addr, std::uint8_t data)
+void Bus::write(uint16_t addr, uint8_t data)
 {
 	if (addr <= 0x0000 || addr >= 0xFFFF)
 	{
