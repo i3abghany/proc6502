@@ -51,7 +51,7 @@ std::string proc6502::hex(uint32_t n, uint32_t d)
 	return res;
 }
 
-std::map<uint16_t, std::string> proc6502::disassemble(const uint8_t start, const uint8_t stop)
+std::map<uint16_t, std::string> proc6502::disassemble(const uint16_t start, const uint16_t stop)
 {
 	uint32_t addr = start;
 	uint8_t value = 0x00, lo = 0x00, hi = 0x00;
@@ -159,6 +159,24 @@ std::map<uint16_t, std::string> proc6502::disassemble(const uint8_t start, const
 	return MapLines;
 }
 
+void proc6502::LoadProgram(const std::string& FileName)
+{
+	const uint16_t start = 0x8000;
+	std::ifstream file(FileName, std::ifstream::in);
+	if (!file.good()) throw std::invalid_argument("Could not open the file.");
+
+	std::string word;
+	uint16_t offset = 0;
+	while (file >> word)
+	{
+		uint16_t instruction = std::stoul(word, nullptr, 16);
+		write(start + offset, instruction);
+		++offset;
+	}
+
+	file.close();
+}
+
 void proc6502::clock()
 {
 	if (cycles == 0)
@@ -180,6 +198,9 @@ void proc6502::clock()
 	--cycles;
 }
 
+// Sets the processor to a known state.
+// Clears registers and status, registers.
+// Takes the new PC address from Memory[xFFFC].
 void proc6502::reset()
 {
 	AbsoluteAddress = OriginLine;
@@ -262,15 +283,10 @@ uint8_t proc6502::BRK()
 	return 0;
 }
 
-// Same as IRQ, but it takes the pc from the fixed address 0xFFFA.
+// Same as IRQ, inescapable, reads the new program counter address
+// form location 0xFFFA.
 void proc6502::nmi()
 {
-	auto InterruptMask = GetFlag(FLAGS6502::I);
-	if (!InterruptMask)
-	{
-		return;
-	}
-
 	write(StackStart + stkp, (pc >> 8) & 0x00FF);
 	--stkp;
 	write(StackStart + stkp, pc & 0x00FF);
@@ -290,7 +306,6 @@ void proc6502::nmi()
 	pc = (hi << 8) | lo;
 
 	cycles = 8;
-
 }
 
 bool proc6502::InstructionComplete()
@@ -313,12 +328,16 @@ void proc6502::SetFlag(FLAGS6502 f, bool val)
 
 // Addressing Modes
 
+// Implied addressing mode.
+// No extra data is taken from the instruction.
 uint8_t proc6502::IMP()
 {
 	FetchedData = AC;
 	return 0;
 }
 
+// Immediate addressing mode.
+// Data is specified directly in the instruction itself.
 uint8_t proc6502::IMM()
 {
 	AbsoluteAddress = pc;
@@ -326,6 +345,10 @@ uint8_t proc6502::IMM()
 	return 0;
 }
 
+
+// Zero page addressing mode.
+// Data is in the zeroth page in memory.
+// in the form of 0x00XX.
 uint8_t proc6502::ZP0()
 {
 	AbsoluteAddress = read(pc);
@@ -334,6 +357,9 @@ uint8_t proc6502::ZP0()
 	return 0;
 }
 
+// Zero page with offset x addressing mode.
+// Data is in the zeroth page in memory
+// offset by the content of the XReg.
 uint8_t proc6502::ZPX()
 {
 	AbsoluteAddress = read(pc);
@@ -343,6 +369,9 @@ uint8_t proc6502::ZPX()
 	return 0;
 }
 
+// Zero page with offset y addressing mode.
+// Data is in the zeroth page in memory
+// offset by the content of the YReg.
 uint8_t proc6502::ZPY()
 {
 	AbsoluteAddress = read(pc);
@@ -354,11 +383,11 @@ uint8_t proc6502::ZPY()
 
 uint8_t proc6502::REL()
 {
-	return uint8_t();
+	return 0;
 }
 
-// Gets the address stored as two halves in the two
-// words following the instruction.
+// Absolute addressing mode, specifies 2 halves of PC
+// in the next 2 bytes.
 uint8_t proc6502::ABS()
 {
 	uint16_t lo = read(pc);
@@ -371,6 +400,7 @@ uint8_t proc6502::ABS()
 	return 0;
 }
 
+// Absolute addressing mode, with x offset.
 uint8_t proc6502::ABX()
 {
 	uint16_t lo = read(pc);
@@ -382,16 +412,13 @@ uint8_t proc6502::ABX()
 	AbsoluteAddress = (hi << 8) | lo;
 	AbsoluteAddress += XReg;
 
-	if ((AbsoluteAddress & 0xFF00) != (hi << 8))
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
+	// Reguires 1 more cycle if the incrementation by x
+	// resulting in an address in a different memory page.
+	if ((AbsoluteAddress & 0xFF00) != (hi << 8)) return 1;
+	else return 0;
 }
 
+// Absolute addressing mode with y offset.
 uint8_t proc6502::ABY()
 {
 	uint16_t lo = read(pc);
@@ -403,16 +430,13 @@ uint8_t proc6502::ABY()
 	AbsoluteAddress = (hi << 8) | lo;
 	AbsoluteAddress += YReg;
 
-	if ((AbsoluteAddress & 0xFF00) != (hi << 8))
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
+	// Reguires 1 more cycle if the incrementation by x
+	// resulting in an address in a different memory page.
+	if ((AbsoluteAddress & 0xFF00) != (hi << 8)) return 1;
+	else return 0;
 }
 
+// Indirect addressing mode.
 uint8_t proc6502::IND()
 {
 	uint16_t PtrLo = read(pc);
@@ -710,7 +734,7 @@ uint8_t proc6502::BIT()
 
 	SetFlag(FLAGS6502::N, FetchedData & (1 << 7));
 	SetFlag(FLAGS6502::V, FetchedData & (1 << 6));
-	SetFlag(FLAGS6502::Z, (AndedValue & 0x0000) == 0);
+	SetFlag(FLAGS6502::Z, (AndedValue & 0x00FF) == 0);
 
 	return 0;
 }
@@ -854,14 +878,13 @@ uint8_t proc6502::INC()
 	SetFlag(FLAGS6502::N, temp & 0x0080);
 
 	return 0;
-
 }
 
 // Increments value at XReg.
 // Modifies flags N and Z.
 uint8_t proc6502::INX()
 {
-	XReg = (XReg) + 1;
+	XReg = XReg + 1;
 
 	SetFlag(FLAGS6502::Z, XReg == 0x0000);
 	SetFlag(FLAGS6502::N, XReg  & 0x0080);
@@ -874,7 +897,7 @@ uint8_t proc6502::INX()
 // Modifies flags N and Z.
 uint8_t proc6502::INY()
 {
-	YReg = (YReg) + 1;
+	YReg = YReg + 1;
 
 	SetFlag(FLAGS6502::Z, YReg == 0x0000);
 	SetFlag(FLAGS6502::N, YReg  & 0x0080);
@@ -974,7 +997,6 @@ uint8_t proc6502::LSR()
 	
 	return 0;
 }
-
 
 // OR fetched data from Memory with Accumulator
 // Modifies flags N and Z.
@@ -1250,7 +1272,7 @@ uint8_t proc6502::TXA()
 	return 0;
 }
 
-// Puts X register into the Stack pointer register
+// Puts X register into the stack pointer register
 uint8_t proc6502::TXS()
 {
 	stkp = XReg;
@@ -1270,8 +1292,7 @@ uint8_t proc6502::TYA()
 	return 0;
 }
 
-// catches all the wrong opcodes.
-// TODO: syntax errors handling.
+// catches all illegal opcodes.
 uint8_t proc6502::XXX()
 {
 	return 0;

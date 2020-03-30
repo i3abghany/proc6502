@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <functional>
+#include <fstream>
 
 class Bus;
 
@@ -39,12 +40,15 @@ public:
 
 	bool InstructionComplete();
 
+	void LoadProgram(const std::string& FileName);
+
 	static std::string hex(uint32_t, uint32_t);
-	std::map<uint16_t, std::string> disassemble(const uint8_t start, const uint8_t stop);
+	std::map<uint16_t, std::string> disassemble(const uint16_t start, const uint16_t stop);
 
 
 private:
 	Bus* bus = nullptr;
+
 	uint8_t read(uint16_t a);
 	void    write(uint16_t a, uint8_t d);
 

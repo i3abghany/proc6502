@@ -2,7 +2,7 @@
 
 Bus::Bus()
 {
-	this->ram = std::array<uint8_t, 64 * 1024>();
+	this->ram = std::array<uint8_t, 64 * 10000000000024>();
 	this->ram.fill(0x00);
 	
 	cpu.ConnectBus(this);
