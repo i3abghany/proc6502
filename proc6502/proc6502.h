@@ -111,7 +111,7 @@ private:
 		uint8_t(proc6502::* AddressMode)() = nullptr;
 		uint8_t cycles = 0;
 	};
-
+	using p = proc6502;
 	std::vector<INSTRUCTION> InstructionLookupTable;
 };
 

@@ -211,7 +211,7 @@ void proc6502::reset()
 	AC = 0;
 	XReg = 0;
 	YReg = 0;
-
+	0x0100;
 	stkp = 0xFD;
 	status = 0x00;
 
@@ -490,7 +490,7 @@ uint8_t proc6502::IZY()
 	uint16_t lo = read(addr & 0x00FF);
 	uint16_t hi = read((addr + 1) & 0x00FF);
 
-	AbsoluteAddress = (uint16_t)((uint16_t)hi << 8 | (uint16_t)lo);
+	AbsoluteAddress = (hi << 8 | lo);
 	AbsoluteAddress += YReg;
 
 	if ((AbsoluteAddress & 0xFF00) != hi << 8)
@@ -501,7 +501,7 @@ uint8_t proc6502::IZY()
 	return 0;
 }
 
-// Fetches data from Memory[AbsoluteAddress] only if the current OpCode doesn't use the implied addressing mode.
+// Fetches data from Memory[AbsoluteAddress] if the current OpCode doesn't use the implied addressing mode.
 uint8_t proc6502::fetch()
 {
 	if (InstructionLookupTable[OpCode].AddressMode != &proc6502::IMP)
@@ -563,7 +563,7 @@ uint8_t proc6502::AND()
 	SetFlag(FLAGS6502::Z, AC == 0x00);
 	SetFlag(FLAGS6502::N, AC &  0x80);
 
-	return 0;
+	return 1;
 }
 
 // Arithmetic shift left. 
@@ -775,7 +775,7 @@ uint8_t proc6502::CMP()
 	SetFlag(FLAGS6502::Z, (temp & 0x00FF) == 0);
 	SetFlag(FLAGS6502::N, temp & 0x0080);
 
-	return 0;
+	return 1;
 }
 // Compare X register with fetched data and set flags accordingly.
 uint8_t proc6502::CPX()
@@ -859,7 +859,7 @@ uint8_t proc6502::EOR()
 	SetFlag(FLAGS6502::Z, AC == 0x0000);
 	SetFlag(FLAGS6502::N, AC  & 0x0080);
 
-	return 0;
+	return 1;
 }
 
 // Increments value at memory.
@@ -938,7 +938,7 @@ uint8_t proc6502::LDA()
 	SetFlag(FLAGS6502::Z, AC == 0x00);
 	SetFlag(FLAGS6502::N, AC & 0x80);
 
-	return 0;
+	return 1;
 }
 
 // Load data to the XReg.
@@ -952,7 +952,7 @@ uint8_t proc6502::LDX()
 	SetFlag(FLAGS6502::Z, XReg == 0x00);
 	SetFlag(FLAGS6502::N, XReg & 0x80);
 
-	return 0;
+	return 1;
 }
 
 // Loads data to the YReg.
@@ -966,7 +966,7 @@ uint8_t proc6502::LDY()
 	SetFlag(FLAGS6502::Z, YReg == 0x00);
 	SetFlag(FLAGS6502::N, YReg & 0x80);
 
-	return 0;
+	return 1;
 }
 
 // Logical shift right.
