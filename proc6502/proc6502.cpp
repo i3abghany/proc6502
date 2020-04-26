@@ -191,7 +191,10 @@ void proc6502::clock()
 		auto AdditionalClockCycles1 = (this->*InstructionLookupTable[OpCode].AddressMode)();
 		auto AdditionalClockCycles2 = (this->*InstructionLookupTable[OpCode].Operation)();
 		
+		// Intrinsic additional clock cycles specified by the nature of the opcode and addressing mode.
+		// Other additional clock cycles are added during the instruction execution if needed.
 		cycles += (AdditionalClockCycles1 & AdditionalClockCycles2);
+
 	}
 	--cycles;
 }
@@ -639,7 +642,6 @@ uint8_t proc6502::BEQ()
 		pc = AbsoluteAddress;
 	}
 	return 0;
-
 }
 
 // Branch if the last operation didn't imply equality.
