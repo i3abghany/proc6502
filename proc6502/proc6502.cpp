@@ -382,8 +382,16 @@ uint8_t proc6502::ZPY()
 	return 0;
 }
 
+// Exclusive for branching instructions, if used, branch instructions can
+// instructions can only have target address within [-128, 127] instructions from 
+// instructions from  current PC value.
 uint8_t proc6502::REL()
 {
+	RelativeAddress = read(pc);
+	++pc;
+	if (RelativeAddress & 0x0080) {
+		RelativeAddress |= 0xFF00;
+	}
 	return 0;
 }
 
